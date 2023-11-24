@@ -336,6 +336,11 @@ void frResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseD
         float normalScalar = ((-(1.0f + ctx->restitution) * relVelocityDot) + biasScalar)
             / normalMass;
 
+        {
+            // TODO: ...
+            ctx->contacts[i].cache.normalScalar = normalScalar;
+        }
+
         prVector2 normalImpulse = prVector2ScalarMultiply(ctx->direction, normalScalar);
 
         // TODO: ...
@@ -369,6 +374,11 @@ void frResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseD
         const float maxTangentScalar = ctx->friction * normalScalar;
 
         tangentScalar = fminf(fmaxf(tangentScalar, -maxTangentScalar), maxTangentScalar);
+
+        {
+            // TODO: ...
+            ctx->contacts[i].cache.tangentScalar = tangentScalar;
+        }
 
         prVector2 tangentImpulse = prVector2ScalarMultiply(tangent, tangentScalar);
 

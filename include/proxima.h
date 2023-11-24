@@ -85,7 +85,10 @@ typedef struct _prCollision {
         int edgeId;
         prVector2 point;
         float depth;
-        /* TODO: ... */
+        struct {
+            float normalScalar;
+            float tangentScalar;
+        } cache;
     } contacts[2];
     int count;
 } prCollision;
