@@ -22,10 +22,10 @@ extern "C" {
 /* Defines how many pixels represent a unit of length (meter). */
 #define PR_GEOMETRY_PIXELS_PER_UNIT 16.0f
 
-/* TODO: ... */
+/* Defines the 'bias factor' for the Baumgarte stabilization scheme. */
 #define PR_WORLD_BAUMGARTE_FACTOR     0.2f
 
-/* TODO: ... */
+/* Defines the 'slop' for the Baumgarte stabilization scheme. */
 #define PR_WORLD_BAUMGARTE_SLOP       0.01f
 
 /* Defines the default gravity acceleration vector for a world. */

@@ -203,13 +203,21 @@ static void prPreStepQueryCallback(int otherBodyIndex, void *ctx) {
         return;
     }
 
-    collision.friction = 0.5f * (prGetShapeFriction(s1) + prGetShapeFriction(s2));
-    collision.restitution = fminf(prGetShapeRestitution(s1), prGetShapeRestitution(s2));
+    prContactCacheEntry *entry = hmgetp_null(queryCtx->world->cache, key);
 
-    if (collision.friction <= 0.0f) collision.friction = 0.0f;
-    if (collision.restitution <= 0.0f) collision.restitution = 0.0f;
+    if (entry != NULL) {
+        collision.friction = entry->value.friction;
+        collision.restitution = entry->value.restitution;
 
-    // TODO: ...
+        /* TODO: ... */
+    } else {
+        collision.friction = prGetShapeFriction(s1) * prGetShapeFriction(s2);
+        collision.restitution = fminf(prGetShapeRestitution(s1), prGetShapeRestitution(s2));
+
+        if (collision.friction <= 0.0f) collision.friction = 0.0f;
+        if (collision.restitution <= 0.0f) collision.restitution = 0.0f;
+    }
+
     hmputs(
         queryCtx->world->cache,
         ((prContactCacheEntry) {
