@@ -22,11 +22,17 @@ extern "C" {
 /* Defines how many pixels represent a unit of length (meter). */
 #define PR_GEOMETRY_PIXELS_PER_UNIT 16.0f
 
+/* TODO: ... */
+#define PR_WORLD_BAUMGARTE_FACTOR     0.2f
+
+/* TODO: ... */
+#define PR_WORLD_BAUMGARTE_SLOP       0.01f
+
 /* Defines the default gravity acceleration vector for a world. */
 #define PR_WORLD_DEFAULT_GRAVITY ((prVector2) { .y = 9.8f })
 
 /* Defines the iteration count for the constraint solver. */
-#define PR_WORLD_ITERATION_COUNT 8
+#define PR_WORLD_ITERATION_COUNT 16
 
 /* Defines the maximum number of objects in a world. */
 #define PR_WORLD_MAX_OBJECT_COUNT 4096
@@ -379,6 +385,9 @@ void prIntegrateForBodyVelocity(prBody *b, float dt);
 
 /* Integrates the velocity of `b` over `dt` to calculate the position of `b`. */
 void prIntegrateForBodyPosition(prBody *b, float dt);
+
+/* Resolves the collision between `b1` and `b2`. */
+void prResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseDt);
 
 /* (From 'timer.c') ===================================================================== */
 

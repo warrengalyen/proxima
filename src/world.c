@@ -146,7 +146,12 @@ void prStepWorld(prWorld *w, float dt) {
 
     for (int i = 0; i < PR_WORLD_ITERATION_COUNT; i++)
         for (int j = 0; j < hmlen(w->cache); j++)
-            /* TODO: ... */ ;
+            prResolveCollision(
+                w->cache[j].key.first,
+                w->cache[j].key.second,
+                &w->cache[j].value,
+                inverseDt
+            );
 
     for (int i = 0; i < arrlen(w->bodies); i++)
         prIntegrateForBodyPosition(w->bodies[i], dt);
@@ -184,10 +189,34 @@ static void prPreStepQueryCallback(int otherBodyIndex, void *ctx) {
     prBody *b1 = queryCtx->world->bodies[queryCtx->bodyIndex];
     prBody *b2 = queryCtx->world->bodies[otherBodyIndex];
 
+    const prBodyPair key = { .first = b1, .second = b2 };
+
     prShape *s1 = prGetBodyShape(b1), *s2 = prGetBodyShape(b2);
     prTransform tx1 = prGetBodyTransform(b1), tx2 = prGetBodyTransform(b2);
 
-    /* TODO: ... */
+    prCollision collision = { .count = 0 };
+
+    if (!prComputeCollision(s1, tx1, s2, tx2, &collision)) {
+        // NOTE: `hmdel()` returns `0` if `key` is not in `queryCtx->world->cache`!
+        hmdel(queryCtx->world->cache, key);
+
+        return;
+    }
+
+    collision.friction = 0.5f * (prGetShapeFriction(s1) + prGetShapeFriction(s2));
+    collision.restitution = fminf(prGetShapeRestitution(s1), prGetShapeRestitution(s2));
+
+    if (collision.friction <= 0.0f) collision.friction = 0.0f;
+    if (collision.restitution <= 0.0f) collision.restitution = 0.0f;
+
+    // TODO: ...
+    hmputs(
+        queryCtx->world->cache,
+        ((prContactCacheEntry) {
+            .key = key,
+            .value = collision
+        })
+    );
 }
 
 /* Finds all pairs of bodies in `w` that are colliding. */

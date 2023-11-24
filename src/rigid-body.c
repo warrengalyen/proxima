@@ -285,6 +285,99 @@ void prIntegrateForBodyPosition(prBody *b, float dt) {
     b->aabb = prGetShapeAABB(b->shape, b->tx);
 }
 
+/* Resolves the collision between `b1` and `b2`. */
+void frResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseDt) {
+    if (b1 == NULL || b2 == NULL || ctx == NULL) return;
+
+    if (b1->mtn.inverseMass + b2->mtn.inverseMass <= 0.0f) {
+        if (prGetBodyType(b1) == PR_BODY_STATIC) 
+            b1->mtn.velocity.x = b1->mtn.velocity.y = b1->mtn.angularVelocity = 0.0f;
+
+        if (prGetBodyType(b2) == PR_BODY_STATIC)
+            b2->mtn.velocity.x = b2->mtn.velocity.y = b2->mtn.angularVelocity = 0.0f;
+
+        return;
+    }
+
+    for (int i = 0; i < ctx->count; i++) {
+        const prVector2 contactPoint = ctx->contacts[i].point;
+
+        prVector2 relPosition1 = prVector2Subtract(contactPoint, prGetBodyPosition(b1));
+        prVector2 relPosition2 = prVector2Subtract(contactPoint, prGetBodyPosition(b2));
+
+        prVector2 relNormal1 = prVector2LeftNormal(relPosition1);
+        prVector2 relNormal2 = prVector2LeftNormal(relPosition2);
+
+        prVector2 relVelocity = prVector2Subtract(
+            prVector2Add(
+                b2->mtn.velocity,
+                prVector2ScalarMultiply(relNormal2, b2->mtn.angularVelocity)
+            ),
+            prVector2Add(
+                b1->mtn.velocity, 
+                prVector2ScalarMultiply(relNormal1, b1->mtn.angularVelocity)
+            )
+        );
+
+        float relVelocityDot = prVector2Dot(relVelocity, ctx->direction);
+
+        if (relVelocityDot > 0.0f) continue;
+
+        float relPositionCross1 = prVector2Cross(relPosition1, ctx->direction);
+        float relPositionCross2 = prVector2Cross(relPosition2, ctx->direction);
+
+        const float normalMass = (b1->mtn.inverseMass + b2->mtn.inverseMass)
+            + b1->mtn.inverseInertia * (relPositionCross1 * relPositionCross1)
+            + b2->mtn.inverseInertia * (relPositionCross2 * relPositionCross2);
+
+        const float biasScalar = -(PR_WORLD_BAUMGARTE_FACTOR * inverseDt)
+            * fminf(0.0f, -ctx->contacts[i].depth + PR_WORLD_BAUMGARTE_SLOP);
+
+        float normalScalar = ((-(1.0f + ctx->restitution) * relVelocityDot) + biasScalar)
+            / normalMass;
+
+        prVector2 normalImpulse = prVector2ScalarMultiply(ctx->direction, normalScalar);
+
+        // TODO: ...
+        prApplyImpulseToBody(b1, relPosition1, prVector2Negate(normalImpulse));
+        prApplyImpulseToBody(b2, relPosition2, normalImpulse);
+
+        relVelocity = prVector2Subtract(
+            prVector2Add(
+                b2->mtn.velocity,
+                prVector2ScalarMultiply(relNormal2, b2->mtn.angularVelocity)
+            ),
+            prVector2Add(
+                b1->mtn.velocity, 
+                prVector2ScalarMultiply(relNormal1, b1->mtn.angularVelocity)
+            )
+        );
+
+        relVelocityDot = prVector2Dot(relVelocity, ctx->direction);
+
+        prVector2 tangent = { .x = ctx->direction.y, .y = -ctx->direction.x };
+
+        relPositionCross1 = prVector2Cross(relPosition1, tangent);
+        relPositionCross2 = prVector2Cross(relPosition2, tangent);
+
+        float tangentMass = (b1->mtn.inverseMass + b2->mtn.inverseMass)
+            + b1->mtn.inverseInertia * (relPositionCross1 * relPositionCross1)
+            + b2->mtn.inverseInertia * (relPositionCross2 * relPositionCross2);
+
+        float tangentScalar = -prVector2Dot(relVelocity, tangent) / tangentMass;
+
+        const float maxTangentScalar = ctx->friction * normalScalar;
+
+        tangentScalar = fminf(fmaxf(tangentScalar, -maxTangentScalar), maxTangentScalar);
+
+        prVector2 tangentImpulse = prVector2ScalarMultiply(tangent, tangentScalar);
+
+        // TODO: ...
+        frApplyImpulseToBody(b1, relPosition1, frVector2Negate(tangentImpulse));
+        frApplyImpulseToBody(b2, relPosition2, tangentImpulse);
+    }
+}
+
 /* Private Functions ==================================================================== */
 
 /* Computes the mass and the moment of inertia for `b`. */
