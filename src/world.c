@@ -213,9 +213,9 @@ static void prPreStepQueryCallback(int otherBodyIndex, void *ctx) {
             int k = -1;
 
             for (int j = 0; j < entry->value.count; j++) {
-                const int oldEdgeId = entry->value.contacts[j].edgeId;
+                const int edgeId = entry->value.contacts[j].edgeId;
 
-                if (collision.contacts[i].edgeId == oldEdgeId) {
+                if (collision.contacts[i].edgeId == edgeId) {
                     k = j;
 
                     break;
@@ -224,11 +224,11 @@ static void prPreStepQueryCallback(int otherBodyIndex, void *ctx) {
 
             if (k < 0) continue;
 
-            const float oldNormalScalar = entry->value.contacts[k].cache.normalScalar;
-            const float oldTangentScalar = entry->value.contacts[k].cache.tangentScalar;
+            const float accNormalScalar = entry->value.contacts[k].cache.normalScalar;
+            const float accTangentScalar = entry->value.contacts[k].cache.tangentScalar;
 
-            collision.contacts[i].cache.normalScalar = oldNormalScalar;
-            collision.contacts[i].cache.tangentScalar = oldTangentScalar;
+            collision.contacts[i].cache.normalScalar = accNormalScalar;
+            collision.contacts[i].cache.tangentScalar = accTangentScalar;
         }
     } else {
         collision.friction = prGetShapeFriction(s1) * prGetShapeFriction(s2);

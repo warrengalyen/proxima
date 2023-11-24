@@ -17,25 +17,25 @@ extern "C" {
 /* User-Defined Macros ================================================================== */
 
 /* Defines the maximum number of vertices for a convex polygon. */
-#define PR_GEOMETRY_MAX_VERTEX_COUNT 8
+#define PR_GEOMETRY_MAX_VERTEX_COUNT  8
 
 /* Defines how many pixels represent a unit of length (meter). */
-#define PR_GEOMETRY_PIXELS_PER_UNIT 16.0f
+#define PR_GEOMETRY_PIXELS_PER_UNIT   16.0f
 
 /* Defines the 'bias factor' for the Baumgarte stabilization scheme. */
-#define PR_WORLD_BAUMGARTE_FACTOR     0.2f
+#define PR_WORLD_BAUMGARTE_FACTOR     0.25f
 
 /* Defines the 'slop' for the Baumgarte stabilization scheme. */
-#define PR_WORLD_BAUMGARTE_SLOP       0.01f
+#define PR_WORLD_BAUMGARTE_SLOP       0.02f
 
 /* Defines the default gravity acceleration vector for a world. */
-#define PR_WORLD_DEFAULT_GRAVITY ((prVector2) { .y = 9.8f })
+#define PR_WORLD_DEFAULT_GRAVITY      ((prVector2) { .y = 9.8f })
 
 /* Defines the iteration count for the constraint solver. */
-#define PR_WORLD_ITERATION_COUNT 16
+#define PR_WORLD_ITERATION_COUNT      16
 
 /* Defines the maximum number of objects in a world. */
-#define PR_WORLD_MAX_OBJECT_COUNT 4096
+#define PR_WORLD_MAX_OBJECT_COUNT     4096
 
 /* Macros =============================================================================== */
 

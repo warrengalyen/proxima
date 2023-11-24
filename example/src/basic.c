@@ -17,11 +17,9 @@
 #define SCREEN_WIDTH     800
 #define SCREEN_HEIGHT    600
 
-#define WORLD_CELL_SIZE  4.0f
-
 /* Constants ============================================================================ */
 
-static const float DELTA_TIME = 1.0f / TARGET_FPS;
+static const float CELL_SIZE = 4.0f, DELTA_TIME = 1.0f / TARGET_FPS;
 
 /* Private Variables ==================================================================== */
 
@@ -37,7 +35,7 @@ static void InitExample(void);
 static void UpdateExample(void);
 static void DeinitExample(void);
 
-/* Public Functions =================================================================== */
+/* Public Functions ===================================================================== */
 
 int main(void) {
     SetConfigFlags(FLAG_MSAA_4X_HINT);
@@ -65,7 +63,7 @@ int main(void) {
 /* Private Functions ==================================================================== */
 
 static void InitExample(void) {
-    world = prCreateWorld(PR_WORLD_DEFAULT_GRAVITY, WORLD_CELL_SIZE);
+    world = prCreateWorld(PR_WORLD_DEFAULT_GRAVITY, CELL_SIZE);
 
     ground = prCreateBodyFromShape(
         PR_BODY_STATIC,
@@ -118,7 +116,7 @@ static void UpdateExample(void) {
             
         ClearBackground(PR_DRAW_COLOR_MATTEBLACK);
 
-        prDrawGrid(bounds, WORLD_CELL_SIZE, 0.25f, ColorAlpha(DARKGRAY, 0.75f));
+        prDrawGrid(bounds, CELL_SIZE, 0.25f, ColorAlpha(DARKGRAY, 0.75f));
 
         prDrawBodyLines(ground, 1.0f, GRAY);
 

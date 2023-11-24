@@ -286,7 +286,7 @@ void prIntegrateForBodyPosition(prBody *b, float dt) {
 }
 
 /* Resolves the collision between `b1` and `b2`. */
-void frResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseDt) {
+void prResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseDt) {
     if (b1 == NULL || b2 == NULL || ctx == NULL) return;
 
     if (b1->mtn.inverseMass + b2->mtn.inverseMass <= 0.0f) {
@@ -298,6 +298,8 @@ void frResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseD
 
         return;
     }
+
+     const prVector2 ctxTangent = { .x = ctx->direction.y, .y = -ctx->direction.x };
 
     for (int i = 0; i < ctx->count; i++) {
         const prVector2 contactPoint = ctx->contacts[i].point;
@@ -321,8 +323,6 @@ void frResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseD
 
         float relVelocityDot = prVector2Dot(relVelocity, ctx->direction);
 
-        if (relVelocityDot > 0.0f) continue;
-
         float relPositionCross1 = prVector2Cross(relPosition1, ctx->direction);
         float relPositionCross2 = prVector2Cross(relPosition2, ctx->direction);
 
@@ -343,7 +343,6 @@ void frResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseD
 
         prVector2 normalImpulse = prVector2ScalarMultiply(ctx->direction, normalScalar);
 
-        // TODO: ...
         prApplyImpulseToBody(b1, relPosition1, prVector2Negate(normalImpulse));
         prApplyImpulseToBody(b2, relPosition2, normalImpulse);
 
@@ -360,18 +359,16 @@ void frResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseD
 
         relVelocityDot = prVector2Dot(relVelocity, ctx->direction);
 
-        prVector2 tangent = { .x = ctx->direction.y, .y = -ctx->direction.x };
-
-        relPositionCross1 = prVector2Cross(relPosition1, tangent);
-        relPositionCross2 = prVector2Cross(relPosition2, tangent);
+        relPositionCross1 = prVector2Cross(relPosition1, ctxTangent);
+        relPositionCross2 = prVector2Cross(relPosition2, ctxTangent);
 
         float tangentMass = (b1->mtn.inverseMass + b2->mtn.inverseMass)
             + b1->mtn.inverseInertia * (relPositionCross1 * relPositionCross1)
             + b2->mtn.inverseInertia * (relPositionCross2 * relPositionCross2);
 
-        float tangentScalar = -prVector2Dot(relVelocity, tangent) / tangentMass;
+        float tangentScalar = -prVector2Dot(relVelocity, ctxTangent) / tangentMass;
 
-        const float maxTangentScalar = ctx->friction * normalScalar;
+        const float maxTangentScalar = fabsf(ctx->friction * normalScalar);
 
         tangentScalar = fminf(fmaxf(tangentScalar, -maxTangentScalar), maxTangentScalar);
 
@@ -380,11 +377,10 @@ void frResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseD
             ctx->contacts[i].cache.tangentScalar = tangentScalar;
         }
 
-        prVector2 tangentImpulse = prVector2ScalarMultiply(tangent, tangentScalar);
+        prVector2 tangentImpulse = prVector2ScalarMultiply(ctxTangent, tangentScalar);
 
-        // TODO: ...
-        frApplyImpulseToBody(b1, relPosition1, frVector2Negate(tangentImpulse));
-        frApplyImpulseToBody(b2, relPosition2, tangentImpulse);
+        prApplyImpulseToBody(b1, relPosition1, prVector2Negate(tangentImpulse));
+        prApplyImpulseToBody(b2, relPosition2, tangentImpulse);
     }
 }
 
