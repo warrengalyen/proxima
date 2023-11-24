@@ -1,0 +1,525 @@
+/* Includes ============================================================================= */
+
+#include <float.h>
+
+#include "proxima.h"
+
+/* Typedefs ============================================================================= */
+
+/* A structure that represents an edge of a convex polygon. */
+typedef struct _prEdge {
+    prVector2 data[2];
+    int indexes[2];
+} prEdge;
+
+/* Private Function Prototypes ========================================================== */
+
+/* 
+    Clips `e` so that the dot product of each vertex in `e` 
+    and `v` is greater than or equal to `dot`. 
+*/
+static void prClipEdge(prEdge *e, prVector2 v, float dot);
+
+/* 
+    Checks whether `s1` and `s2` are colliding,
+    assuming `s1` and `s2` are 'circle' collision shapes,
+    then stores the collision information to `collision`.
+*/
+static bool prComputeCollisionCircles(
+    const prShape *s1, prTransform tx1, 
+    const prShape *s2, prTransform tx2,
+    prCollision *collision
+);
+
+/* 
+    Checks whether `s1` and `s2` are colliding,
+    assuming `s1` is a 'circle' collision shape and `s2` is a 'polygon' collision shape,
+    then stores the collision information to `collision`.
+*/
+static bool prComputeCollisionCirclePoly(
+    const prShape *s1, prTransform tx1, 
+    const prShape *s2, prTransform tx2,
+    prCollision *collision
+);
+
+/* 
+    Checks whether `s1` and `s2` are colliding,
+    assuming `s1` and `s2` are 'polygon' collision shapes,
+    then stores the collision information to `collision`.
+*/
+static bool prComputeCollisionPolys(
+    const prShape *s1, prTransform tx1, 
+    const prShape *s2, prTransform tx2,
+    prCollision *collision
+);
+
+/* Returns the edge of `s` that is most perpendicular to `v`. */
+static prEdge prGetContactEdge(const prShape *s, prTransform tx, prVector2 v);
+
+/* Finds the axis of minimum penetration from `s1` to `s2`, then returns its index. */
+static int prGetSeparatingAxisIndex(
+    const prShape *s1, prTransform tx1, 
+    const prShape *s2, prTransform tx2,
+    float *depth
+);
+
+/* Finds the vertex farthest along `v`, then returns its index. */
+static int prGetSupportPointIndex(
+    const prVertices *vertices, 
+    prTransform tx, prVector2 v
+);
+
+/* Public Functions ===================================================================== */
+
+/* 
+    Checks whether `s1` and `s2` are colliding,
+    then stores the collision information to `collision`.
+*/
+bool prComputeCollision(
+    const prShape *s1, prTransform tx1, 
+    const prShape *s2, prTransform tx2,
+    prCollision *collision
+) {
+    if (s1 == NULL || s2 == NULL) return false;
+
+    prShapeType t1 = prGetShapeType(s1);
+    prShapeType t2 = prGetShapeType(s2);
+
+    if (t1 == PR_SHAPE_CIRCLE && t2 == PR_SHAPE_CIRCLE)
+        return prComputeCollisionCircles(s1, tx1, s2, tx2, collision);
+    else if ((t1 == PR_SHAPE_CIRCLE && t2 == PR_SHAPE_POLYGON) 
+        || (t1 == PR_SHAPE_POLYGON && t2 == PR_SHAPE_CIRCLE))
+        return prComputeCollisionCirclePoly(s1, tx1, s2, tx2, collision);
+    else if (t1 == PR_SHAPE_POLYGON && t2 == PR_SHAPE_POLYGON)
+        return prComputeCollisionPolys(s1, tx1, s2, tx2, collision);
+    else return false;
+}
+
+/* Private Functions ==================================================================== */
+
+/* 
+    Clips `e` so that the dot product of each vertex in `e` 
+    and `v` is greater than or equal to `dot`. 
+*/
+static void prClipEdge(prEdge *e, prVector2 v, float dot) {
+    float dot1 = prVector2Dot(e->data[0], v) - dot;
+    float dot2 = prVector2Dot(e->data[1], v) - dot;
+
+    bool inside1 = (dot1 >= 0.0f), inside2 = (dot2 >= 0.0f);
+
+    if (inside1 && inside2) return;
+
+    prVector2 edgeVector = prVector2Subtract(e->data[1], e->data[0]);
+    
+    prVector2 midpoint = prVector2Add(
+        e->data[0], prVector2ScalarMultiply(edgeVector, (dot1 / (dot1 - dot2)))
+    );
+    
+    if (inside1 && !inside2)
+        e->data[1] = midpoint;
+    else if (!inside1 && inside2)
+        e->data[0] = e->data[1], e->data[1] = midpoint;
+}
+
+/* 
+    Checks whether `s1` and `s2` are colliding,
+    assuming `s1` and `s2` are 'circle' collision shapes,
+    then stores the collision information to `collision`.
+*/
+static bool prComputeCollisionCircles(
+    const prShape *s1, prTransform tx1, 
+    const prShape *s2, prTransform tx2,
+    prCollision *collision
+) {
+    prVector2 direction = prVector2Subtract(tx2.position, tx1.position);
+
+    float radiusSum = prGetCircleRadius(s1) + prGetCircleRadius(s2);
+    float magnitudeSqr = prVector2MagnitudeSqr(direction);
+
+    if (radiusSum * radiusSum < magnitudeSqr) return false;
+
+    if (collision != NULL) {
+        float magnitude = sqrtf(magnitudeSqr);
+
+        collision->direction = (magnitude > 0.0f)
+            ? prVector2ScalarMultiply(direction, 1.0f / magnitude)
+            : (prVector2) { .x = 1.0f };
+
+        collision->contacts[0].edgeId = 0;
+
+        collision->contacts[0].point = prVector2Transform(
+            prVector2ScalarMultiply(collision->direction, prGetCircleRadius(s1)), tx1
+        );
+
+        collision->contacts[0].depth = (magnitude > 0.0f)
+            ? radiusSum - magnitude
+            : prGetCircleRadius(s1);
+
+        collision->contacts[1] = collision->contacts[0];
+
+        collision->count = 1;
+    }
+
+    return true;
+}
+
+/* 
+    Checks whether `s1` and `s2` are colliding,
+    assuming `s1` is a 'circle' collision shape and `s2` is a 'polygon' collision shape,
+    then stores the collision information to `collision`.
+*/
+static bool prComputeCollisionCirclePoly(
+    const prShape *s1, prTransform tx1, 
+    const prShape *s2, prTransform tx2,
+    prCollision *collision
+) {
+    prShape *circle, *poly;
+    prTransform circleTx, polyTx;
+
+    if (prGetShapeType(s1) == PR_SHAPE_CIRCLE) {
+        circle = (prShape *) s1, poly = (prShape *) s2;
+        circleTx = tx1, polyTx = tx2;
+    } else {
+        circle = (prShape *) s2, poly = (prShape *) s1;
+        circleTx = tx2, polyTx = tx1;
+    }
+
+    const prVertices *vertices = prGetPolygonVertices(poly);
+    const prVertices *normals = prGetPolygonNormals(poly);
+    
+    /*
+        NOTE: `txCenter` refers to the center of the 'circle' collision shape
+        transformed to the local space of the 'polygon' collision shape.
+    */
+    prVector2 txCenter = prVector2Rotate(
+        prVector2Subtract(circleTx.position, polyTx.position), 
+        -polyTx.angle
+    );
+
+    float radius = prGetCircleRadius(circle), maxDot = -FLT_MAX;
+
+    int maxIndex = -1;
+
+    /*
+        NOTE: This will find the edge of the 'polygon' collision shape
+        closest to the center of the 'circle' collision shape.
+    */
+    for (int i = 0; i < vertices->count; i++) {
+        float dot = prVector2Dot(
+            normals->data[i], 
+            prVector2Subtract(txCenter, vertices->data[i])
+        );
+
+        if (dot > radius) return false;
+        
+        if (maxDot < dot) maxDot = dot, maxIndex = i;
+    }
+
+    if (maxIndex < 0) return false;
+
+    /*
+        NOTE: Is the center of the 'circle' collision shape 
+        inside the 'polygon' collision shape?
+    */
+    if (maxDot < 0.0f) {
+        if (collision != NULL) {
+            collision->direction = prVector2Negate(
+                prVector2RotateTx(normals->data[maxIndex], polyTx)
+            );
+
+            prVector2 deltaPosition = prVector2Subtract(tx2.position, tx1.position);
+
+            if (prVector2Dot(deltaPosition, collision->direction) < 0.0f)
+                collision->direction = prVector2Negate(collision->direction);
+
+            collision->contacts[0].edgeId = 0;
+
+            collision->contacts[0].point = prVector2Add(
+                circleTx.position,
+                prVector2ScalarMultiply(collision->direction, radius)
+            );
+
+            collision->contacts[0].depth = radius - maxDot;
+
+            collision->contacts[1] = collision->contacts[0];
+
+            collision->count = 1;
+        }
+    } else {
+        prVector2 v1 = (maxIndex > 0)
+            ? vertices->data[maxIndex - 1]
+            : vertices->data[vertices->count - 1];
+        
+        prVector2 v2 = vertices->data[maxIndex];
+
+        prVector2 edgeVector = prVector2Subtract(v2, v1);
+
+        prVector2 v1ToCenter = prVector2Subtract(txCenter, v1);
+        prVector2 v2ToCenter = prVector2Subtract(txCenter, v2);
+
+        float v1Dot = prVector2Dot(v1ToCenter, edgeVector);
+        float v2Dot = prVector2Dot(v2ToCenter, prVector2Negate(edgeVector));
+
+        /*
+            NOTE: This means the center of the 'circle' collision shape
+            does not lie on the line segment from `v1` to `v2`.
+        */
+        if (v1Dot <= 0.0f || v2Dot <= 0.0f) {
+            prVector2 direction = (v1Dot <= 0.0f) ? v1ToCenter : v2ToCenter;
+
+            float magnitudeSqr = prVector2MagnitudeSqr(direction);
+
+            if (magnitudeSqr > radius * radius) return false;
+
+            if (collision != NULL) {
+                float magnitude = sqrtf(magnitudeSqr);
+
+                collision->direction = (magnitude > 0.0f)
+                    ? prVector2ScalarMultiply(
+                        prVector2RotateTx(prVector2Negate(direction), polyTx), 
+                        1.0f / magnitude
+                    )
+                    : PR_API_STRUCT_ZERO(prVector2);
+
+                prVector2 deltaPosition = prVector2Subtract(tx2.position, tx1.position);
+
+                if (prVector2Dot(deltaPosition, collision->direction) < 0.0f)
+                    collision->direction = prVector2Negate(collision->direction);
+
+                collision->contacts[0].edgeId = 0;
+
+                collision->contacts[0].point = prVector2Transform(
+                    prVector2ScalarMultiply(collision->direction, radius), circleTx
+                );
+
+                collision->contacts[0].depth = (magnitude > 0.0f)
+                    ? radius - magnitude
+                    : radius;
+
+                collision->contacts[1] = collision->contacts[0];
+
+                collision->count = 1;
+            }
+        } else {
+            if (collision != NULL) {
+                collision->direction = prVector2Negate(
+                    prVector2RotateTx(normals->data[maxIndex], polyTx)
+                );
+
+                prVector2 deltaPosition = prVector2Subtract(tx2.position, tx1.position);
+
+                if (prVector2Dot(deltaPosition, collision->direction) < 0.0f)
+                    collision->direction = prVector2Negate(collision->direction);
+
+                collision->contacts[0].edgeId = 0;
+
+                collision->contacts[0].point = prVector2Add(
+                    circleTx.position,
+                    prVector2ScalarMultiply(collision->direction, radius)
+                );
+
+                collision->contacts[0].depth = radius - maxDot;
+
+                collision->contacts[1] = collision->contacts[0];
+
+                collision->count = 1;
+            }
+        }
+    }
+
+    return true;
+}
+
+/* 
+    Checks whether `s1` and `s2` are colliding,
+    assuming `s1` and `s2` are 'polygon' collision shapes,
+    then stores the collision information to `collision`.
+*/
+static bool prComputeCollisionPolys(
+    const prShape *s1, prTransform tx1, 
+    const prShape *s2, prTransform tx2,
+    prCollision *collision
+) {
+    float maxDepth1 = FLT_MAX, maxDepth2 = FLT_MAX;
+
+    int index1 = prGetSeparatingAxisIndex(s1, tx1, s2, tx2, &maxDepth1);
+
+    if (maxDepth1 >= 0.0f) return false;
+    
+    int index2 = prGetSeparatingAxisIndex(s2, tx2, s1, tx1, &maxDepth2);
+
+    if (maxDepth2 >= 0.0f) return false;
+
+    if (collision != NULL) {
+        prVector2 direction = (maxDepth1 > maxDepth2)
+            ? prVector2RotateTx(prGetPolygonNormal(s1, index1), tx1)
+            : prVector2RotateTx(prGetPolygonNormal(s2, index2), tx2);
+
+        prVector2 deltaPosition = prVector2Subtract(tx2.position, tx1.position);
+
+        if (prVector2Dot(deltaPosition, direction) < 0.0f)
+            direction = prVector2Negate(direction);
+
+        collision->direction = direction;
+
+        prEdge edge1 = prGetContactEdge(s1, tx1, direction);
+        prEdge edge2 = prGetContactEdge(s2, tx2, prVector2Negate(direction));
+
+        prEdge refEdge = edge1, incEdge = edge2;
+
+        prTransform refTx = tx1, incTx = tx2;
+
+        prVector2 edgeVector1 = prVector2Subtract(edge1.data[1], edge1.data[0]);
+        prVector2 edgeVector2 = prVector2Subtract(edge2.data[1], edge2.data[0]);
+
+        const float edgeDot1 = prVector2Dot(edgeVector1, direction);
+        const float edgeDot2 = prVector2Dot(edgeVector2, direction);
+
+        bool incEdgeFlipped = false;
+
+        if (fabsf(edgeDot1) > fabsf(edgeDot2)) {
+            refEdge = edge2, incEdge = edge1;
+            refTx = tx2, incTx = tx1;
+            
+            incEdgeFlipped = true;
+        }
+
+        prVector2 refEdgeVector = prVector2Normalize(
+            prVector2Subtract(refEdge.data[1], refEdge.data[0])
+        );
+
+        const float refDot1 = prVector2Dot(refEdge.data[0], refEdgeVector);
+        const float refDot2 = prVector2Dot(refEdge.data[1], refEdgeVector);
+
+        prClipEdge(&incEdge, refEdgeVector, refDot1);
+        prClipEdge(&incEdge, prVector2Negate(refEdgeVector), -refDot2);
+
+        prVector2 refEdgeNormal = prVector2RightNormal(refEdgeVector);
+
+        const float maxDepth = prVector2Dot(refEdge.data[0], refEdgeNormal);
+
+        const float depth1 = prVector2Dot(incEdge.data[0], refEdgeNormal) - maxDepth;
+        const float depth2 = prVector2Dot(incEdge.data[1], refEdgeNormal) - maxDepth;
+
+        collision->contacts[0].edgeId = (!incEdgeFlipped) 
+            ? PR_GEOMETRY_MAX_VERTEX_COUNT + incEdge.indexes[0]
+            : incEdge.indexes[0];
+
+        collision->contacts[1].edgeId = collision->contacts[0].edgeId;
+
+        if (depth1 < 0.0f) {
+            collision->contacts[0].point = collision->contacts[1].point = incEdge.data[1];
+            collision->contacts[0].depth = collision->contacts[1].depth = depth2;
+
+            collision->count = 1;
+        } else if (depth2 < 0.0f) {
+            collision->contacts[0].point = collision->contacts[1].point = incEdge.data[0];
+            collision->contacts[0].depth = collision->contacts[1].depth = depth1;
+
+            collision->count = 1;
+        } else {
+            collision->contacts[0].point = incEdge.data[0];
+            collision->contacts[1].point = incEdge.data[1];
+
+            collision->contacts[0].depth = depth1;
+            collision->contacts[1].depth = depth2;
+
+            collision->count = 2;
+        }
+    }
+
+    return true;
+}
+
+/* Returns the edge of `s` that is most perpendicular to `v`. */
+static prEdge prGetContactEdge(const prShape *s, prTransform tx, prVector2 v) {
+    const prVertices *vertices = prGetPolygonVertices(s);
+
+    int supportIndex = prGetSupportPointIndex(vertices, tx, v);
+
+    int prevIndex = (supportIndex == 0) ? vertices->count - 1 : supportIndex - 1;
+    int nextIndex = (supportIndex == vertices->count - 1) ? 0 : supportIndex + 1;
+
+    prVector2 prevEdgeVector = prVector2Normalize(
+        prVector2Subtract(vertices->data[supportIndex], vertices->data[prevIndex])
+    );
+
+    prVector2 nextEdgeVector = prVector2Normalize(
+        prVector2Subtract(vertices->data[supportIndex], vertices->data[nextIndex])
+    );
+
+    v = prVector2Rotate(v, -tx.angle);
+
+    if (prVector2Dot(prevEdgeVector, v) < prVector2Dot(nextEdgeVector, v)) {
+        return (prEdge) { 
+            .data = {
+                prVector2Transform(vertices->data[prevIndex], tx),
+                prVector2Transform(vertices->data[supportIndex], tx)
+            },
+            .indexes = { prevIndex, supportIndex }
+        };
+    } else {
+        return (prEdge) {
+            .data = {
+                prVector2Transform(vertices->data[supportIndex], tx),
+                prVector2Transform(vertices->data[nextIndex], tx)
+            },
+            .indexes = { supportIndex, nextIndex }
+        };
+    }
+}
+
+/* Finds the axis of minimum penetration, then returns its index. */
+static int prGetSeparatingAxisIndex(
+    const prShape *s1, prTransform tx1, 
+    const prShape *s2, prTransform tx2,
+    float *depth
+) {
+    const prVertices *vertices1 = prGetPolygonVertices(s1);
+    const prVertices *vertices2 = prGetPolygonVertices(s2);
+
+    const prVertices *normals1 = prGetPolygonNormals(s1);
+
+    float maxDepth = -FLT_MAX;
+
+    int maxIndex = -1;
+
+    for (int i = 0; i < normals1->count; i++) {
+        prVector2 vertex = prVector2Transform(vertices1->data[i], tx1);
+        prVector2 normal = prVector2RotateTx(normals1->data[i], tx1);
+
+        int supportIndex = prGetSupportPointIndex(vertices2, tx2, prVector2Negate(normal));
+
+        if (supportIndex < 0) return supportIndex;
+
+        prVector2 supportPoint = prVector2Transform(vertices2->data[supportIndex], tx2);
+
+        float depth = prVector2Dot(normal, prVector2Subtract(supportPoint, vertex));
+
+        if (maxDepth < depth) maxDepth = depth, maxIndex = i;
+    }
+
+    if (depth != NULL) *depth = maxDepth;
+
+    return maxIndex;
+}
+
+/* Finds the vertex farthest along `v`, then returns its index. */
+static int prGetSupportPointIndex(
+    const prVertices *vertices, 
+    prTransform tx, prVector2 v
+) {
+    float maxDot = -FLT_MAX;
+    
+    int maxIndex = -1;
+
+    v = prVector2Rotate(v, -tx.angle);
+
+    for (int i = 0; i < vertices->count; i++) {
+        float dot = prVector2Dot(vertices->data[i], v);
+        
+        if (maxDot < dot) maxDot = dot, maxIndex = i;
+    }
+
+    return maxIndex;
+}

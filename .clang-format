@@ -1,0 +1,59 @@
+# https://releases.llvm.org/6.0.0/tools/clang/docs/ClangFormatStyleOptions.html
+
+# C++ coding style based on LLVM style.
+BasedOnStyle: LLVM
+Language: Cpp
+
+# Space settings
+SpaceAfterCStyleCast: true
+SpaceAfterTemplateKeyword: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 1
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInContainerLiterals: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceBeforeCpp11BracedList: true
+Cpp11BracedListStyle: false
+
+# Indent settings
+IndentCaseLabels: true
+IndentWidth: 4
+IndentWrappedFunctionNames: false
+TabWidth: 4
+UseTab: false
+IndentPPDirectives: BeforeHash
+
+# Code alignment settings
+AlignAfterOpenBracket: Align
+AlignConsecutiveMacros: true
+# AlignConsecutiveAssignments: false
+# AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignTrailingComments: true
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: false
+# BinPackArguments: false
+# BinPackParameters: false
+# BreakBeforeBraces: Attach
+BreakBeforeInheritanceComma: false
+SortIncludes: true
+SortUsingDeclarations: true
+
+# Set pointer variable style
+DerivePointerAlignment: false
+PointerAlignment: Right
+
+# Misc style settings
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: true
+ColumnLimit: 0
+MaxEmptyLinesToKeep: 1

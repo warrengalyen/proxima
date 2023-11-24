@@ -1,0 +1,18 @@
+# Backup files and configuration files
+*.bak
+*.manifest
+**/.vs/
+**/.vscode/
+
+# object file
+*.o
+
+# static library file
+*.a
+*.lib
+
+# Build output
+**/bin/
+**/build/
+**/**/Debug/
+**/**/Release/
