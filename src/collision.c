@@ -53,6 +53,20 @@ static bool prComputeCollisionPolys(
     prCollision *collision
 );
 
+/* Computes the intersection of a circle and a line. */
+static bool prComputeIntersectionCircleLine(
+    prVector2 center, float radius,
+    prVector2 origin, prVector2 direction,
+    float *lambda
+);
+
+/* Computes the intersection of two lines. */
+static bool prComputeIntersectionLines(
+    prVector2 origin1, prVector2 direction1,
+    prVector2 origin2, prVector2 direction2,
+    float *lambda
+);
+
 /* Returns the edge of `s` that is most perpendicular to `v`. */
 static prEdge prGetContactEdge(const prShape *s, prTransform tx, prVector2 v);
 
@@ -504,7 +518,7 @@ static int prGetSeparatingAxisIndex(
     return maxIndex;
 }
 
-/* Finds the vertex farthest along `v`, then returns its index. */
+/* Returns the index of the vertex farthest along `v`. */
 static int prGetSupportPointIndex(
     const prVertices *vertices, 
     prTransform tx, prVector2 v
@@ -522,4 +536,157 @@ static int prGetSupportPointIndex(
     }
 
     return maxIndex;
+}
+
+/* Casta a `ray` against `b`. */
+bool prComputeRaycast(const prBody *b, prRay ray, prRaycastHit *raycastHit) {
+    if (b == NULL) return false;
+
+    ray.direction = prVector2Normalize(ray.direction);
+
+    const prShape *s = prGetBodyShape(b);
+    prTransform tx = prGetBodyTransform(b);
+
+    prShapeType type = prGetShapeType(s);
+
+    float lambda = FLT_MAX;
+
+    if (type == PR_SHAPE_CIRCLE) {
+        bool intersects = prComputeIntersectionCircleLine(
+            tx.position, prGetCircleRadius(s),
+            ray.origin, ray.direction,
+            &lambda
+        );
+
+        bool result = (lambda >= 0.0f) && (lambda <= ray.maxDistance);
+
+        if (raycastHit != NULL) {
+            raycastHit->point = prVector2Add(
+                ray.origin, 
+                prVector2ScalarMultiply(ray.direction, lambda)
+            );
+
+            raycastHit->normal = prVector2LeftNormal(
+                prVector2Subtract(ray.origin, raycastHit->point)
+            );
+
+            raycastHit->distance = lambda;
+            raycastHit->inside = (lambda < 0.0f);
+        }
+
+        return result;
+    } else if (type == PR_SHAPE_POLYGON) {
+        const prVertices *vertices = prGetPolygonVertices(s);
+
+        int intersectionCount = 0;
+
+        float minLambda = FLT_MAX;
+
+        for (int j = vertices->count - 1, i = 0; i < vertices->count; j = i, i++) {
+            prVector2 v1 = prVector2Transform(vertices->data[i], tx);
+            prVector2 v2 = prVector2Transform(vertices->data[j], tx);
+
+            prVector2 edgeVector = prVector2Subtract(v1, v2);
+
+            bool intersects = prComputeIntersectionLines(
+                ray.origin, ray.direction, 
+                v2, edgeVector, 
+                &lambda
+            );
+
+            if (intersects && lambda <= ray.maxDistance) {
+                if (minLambda > lambda) {
+                    minLambda = lambda;
+
+                    if (raycastHit != NULL) {
+                        raycastHit->point = prVector2Add(
+                            ray.origin, 
+                            prVector2ScalarMultiply(
+                                ray.direction, 
+                                minLambda
+                            )
+                        );
+
+                        raycastHit->normal = prVector2LeftNormal(edgeVector);
+                    }
+                }
+
+                intersectionCount++;
+            }
+        }
+
+        if (raycastHit != NULL) 
+            raycastHit->inside = (intersectionCount & 1);
+
+        return (!(raycastHit->inside) && (intersectionCount > 0));
+    } else {
+        return false;
+    }
+}
+
+/* Computes the intersection of a circle and a line. */
+static bool prComputeIntersectionCircleLine(
+    prVector2 center, float radius,
+    prVector2 origin, prVector2 direction,
+    float *lambda
+) {
+    const prVector2 originToCenter = prVector2Subtract(center, origin);
+
+    const float dot = prVector2Dot(originToCenter, direction);
+
+    const float heightSqr = prVector2MagnitudeSqr(originToCenter) - (dot * dot);
+    const float baseSqr = (radius * radius) - heightSqr;
+
+    if (lambda != NULL) *lambda = dot - sqrtf(baseSqr);
+
+    return (dot >= 0.0f && baseSqr >= 0.0f);
+}
+
+/* Computes the intersection of two lines. */
+static bool prComputeIntersectionLines(
+    prVector2 origin1, prVector2 direction1,
+    prVector2 origin2, prVector2 direction2,
+    float *lambda
+) {
+    float rXs = prVector2Cross(direction1, direction2);
+
+    prVector2 qp = prVector2Subtract(origin2, origin1);
+
+    float qpXs = prVector2Cross(qp, direction2);
+    float qpXr = prVector2Cross(qp, direction1);
+
+    if (rXs != 0.0f) {
+        float inverseRxS = 1.0f / rXs;
+
+        float t = qpXs * inverseRxS, u = qpXr * inverseRxS;
+
+        if ((t >= 0.0f && t <= 1.0f) && (u >= 0.0f && u <= 1.0f)) {
+            if (lambda != NULL) *lambda = t;
+
+            return true;
+        }
+
+        return false;
+    } else {
+        if (qpXr != 0.0f) return 0;
+
+        float rDr = prVector2Dot(direction1, direction1);
+        float sDr = prVector2Dot(direction2, direction1);
+
+        float inverseRdR = 1.0f / rDr;
+
+        float qpDr = prVector2Dot(qp, direction1);
+
+        float k, t0 = qpDr * inverseRdR, t1 = t0 + sDr * inverseRdR;
+
+        if (sDr < 0.0f) k = t0, t0 = t1, t1 = k;
+
+        if ((t0 < 0.0f && t1 == 0.0f) || (t0 == 1.0f && t1 > 1.0f)) {
+            if (lambda != NULL) *lambda = (t0 == 1.0f);
+
+            return 1;
+        }
+
+        return (t1 >= 0.0f && t0 <= 1.0f);
+    }
 }

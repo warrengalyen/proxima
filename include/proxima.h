@@ -93,6 +93,22 @@ typedef struct _prCollision {
     int count;
 } prCollision;
 
+/* A structure that represents a ray. */
+typedef struct _prRay {
+    prVector2 origin;
+    prVector2 direction;
+    float maxDistance;
+    bool closest;
+} prRay;
+
+/* A struct that represents the information about a raycast hit. */
+typedef struct _prRaycastHit {
+    prVector2 point;
+    prVector2 normal;
+    float distance;
+    bool inside;
+} prRaycastHit;
+
 /* (From 'geometry.c') ================================================================== */
 
 /* An enumeration that represents the type of a collision shape. */
@@ -195,6 +211,9 @@ bool prComputeCollision(
     const prShape *s1, prTransform tx1,
     const prShape *s2, prTransform tx2,
     prCollision *collision);
+
+/* Casts a `ray` against `b`. */
+bool prComputeRaycast(const prBody *b, prRay ray, prRaycastHit *raycastHit);
 
 /* (From 'geometry.c') ================================================================== */
 
