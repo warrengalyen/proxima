@@ -1,3 +1,25 @@
+/*
+    Copyright (c) 2023 Warren Galyen <wgalyen@mechanikadesign.com>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+*/
+
 /* Includes ============================================================================= */
 
 #include "proxima.h"
@@ -55,7 +77,7 @@ int main(void) {
 #ifdef PLATFORM_WEB
     emscripten_set_main_loop(UpdateExample, 0, 1);
 #else
-    // SetTargetFPS(TARGET_FPS);
+    SetTargetFPS(TARGET_FPS);
 
     while (!WindowShouldClose()) 
         UpdateExample();
@@ -202,7 +224,7 @@ static void UpdateExample(void) {
                 prVector2PixelsToUnits(
                     (prVector2) {
                         .x = mousePosition.x,
-                        .y = mousePosition.y + (1.05f * BRICK_HEIGHT)
+                        .y = mousePosition.y + (1.1f * BRICK_HEIGHT)
                     }
                 ),
                 prCreateRectangle(
@@ -249,29 +271,9 @@ static void UpdateExample(void) {
                     .y = 0.5f * BRICK_HEIGHT 
                 },
                 RAD2DEG * prGetBodyAngle(body),
-                ColorAlpha(WHITE, 1.0f)
+                ColorAlpha(WHITE, (body == cursor) ? 0.5f : 1.0f)
             );
         }
-
-        DrawTexturePro(
-            brickTarget.texture,
-            (Rectangle) {
-                .width = BRICK_WIDTH, 
-                .height = BRICK_HEIGHT 
-            },
-            (Rectangle) {
-                .x = mousePosition.x, 
-                .y = mousePosition.y,
-                .width = BRICK_WIDTH,
-                .height = BRICK_HEIGHT
-            },
-            (Vector2) {
-                .x = 0.5f * BRICK_WIDTH, 
-                .y = 0.5f * BRICK_HEIGHT 
-            },
-            0.0f,
-            ColorAlpha(WHITE, 0.5f)
-        );
 
         DrawFPS(8, 8);
 

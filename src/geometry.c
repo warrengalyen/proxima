@@ -1,3 +1,25 @@
+/*
+    Copyright (c) 2023 Warren Galyen <wgalyen@mechanikadesign.com>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+*/
+
 /* Includes ============================================================================= */
 
 #include <float.h>
@@ -161,8 +183,8 @@ prAABB prGetShapeAABB(const prShape *s, prTransform tx) {
             
             result.width = result.height = 2.0f * s->circle.radius;
         } else if (s->type == PR_SHAPE_POLYGON) {
-            prVector2 minVertex = {  FLT_MAX,  FLT_MAX };
-            prVector2 maxVertex = { -FLT_MAX, -FLT_MAX };
+            prVector2 minVertex = { .x = FLT_MAX,  .y = FLT_MAX };
+            prVector2 maxVertex = { .x = -FLT_MAX, .y = -FLT_MAX };
             
             for (int i = 0; i < s->polygon.vertices.count; i++) {
                 const prVector2 v = prVector2Transform(s->polygon.vertices.data[i], tx);

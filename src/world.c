@@ -1,3 +1,25 @@
+/*
+    Copyright (c) 2023 Warren Galyen <wgalyen@mechanikadesign.com>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+*/
+
 /* Includes ============================================================================= */
 
 /* NOTE: `STB_DS_IMPLEMENTATION` is already defined in 'broad-phase.c' */
@@ -6,12 +28,6 @@
 #include "proxima.h"
 
 /* Typedefs ============================================================================= */
-
-/* A structure that represents the context data for `prPreStepQueryCallback()`. */
-typedef struct _prPreStepQueryContext {
-    prWorld *world;
-    int bodyIndex;
-} prPreStepQueryContext;
 
 /* A structure that represents the key-value pair of the contact cache. */
 typedef struct _prContactCacheEntry {
@@ -28,13 +44,19 @@ struct _prWorld {
     float accumulator, timestamp;
 };
 
+/* A structure that represents the context data for `prPreStepHashQueryCallback()`. */
+typedef struct _prPreStepHashQueryCtx {
+    prWorld *world;
+    int bodyIndex;
+} prPreStepHashQueryCtx;
+
 /* Private Function Prototypes ========================================================== */
 
 /* 
     A callback function for `prQuerySpatialHash()` 
     that will be called during `prPreStepWorld()`. 
 */
-static void prPreStepQueryCallback(int otherIndex, void *ctx);
+static bool prPreStepHashQueryCallback(int otherIndex, void *ctx);
 
 /* Finds all pairs of bodies in `w` that are colliding. */
 static void prPreStepWorld(prWorld *w);
@@ -92,7 +114,7 @@ bool prAddBodyToWorld(prWorld *w, prBody *b) {
     return true;
 }
 
-/* Removes a rigid `b`ody from `w`. */
+/* Removes a rigid body from `w`. */
 bool prRemoveBodyFromWorld(prWorld *w, prBody *b) {
     if (w == NULL || b == NULL) return false;
 
@@ -175,16 +197,39 @@ void prUpdateWorld(prWorld *w, float dt) {
         prStepWorld(w, dt);
 }
 
+/* 
+    Casts a `ray` against all objects in `w`, 
+    then calls `func` for each object that collides with `ray`. 
+*/
+void prComputeRaycastForWorld(prWorld *w, prRay ray, prRaycastQueryFunc func) {
+    if (w == NULL || func == NULL) return;
+
+    prClearSpatialHash(w->hash);
+
+    for (int i = 0; i < arrlen(w->bodies); i++)
+        prInsertToSpatialHash(w->hash, prGetBodyAABB(w->bodies[i]), i);
+
+    prVector2 minVertex = ray.origin, maxVertex = prVector2Add(
+        ray.origin, 
+        prVector2ScalarMultiply(
+            prVector2Normalize(ray.direction), 
+            ray.maxDistance
+        )
+    );
+
+    /* TODO: ... */
+}
+
 /* Private Functions ==================================================================== */
 
 /* 
     A callback function for `prQuerySpatialHash()` 
     that will be called during `prPreStepWorld()`. 
 */
-static void prPreStepQueryCallback(int otherBodyIndex, void *ctx) {
-    prPreStepQueryContext *queryCtx = ctx;
+static bool prPreStepHashQueryCallback(int otherBodyIndex, void *ctx) {
+    prPreStepHashQueryCtx *queryCtx = ctx;
 
-    if (otherBodyIndex <= queryCtx->bodyIndex) return;
+    if (otherBodyIndex <= queryCtx->bodyIndex) return false;
 
     prBody *b1 = queryCtx->world->bodies[queryCtx->bodyIndex];
     prBody *b2 = queryCtx->world->bodies[otherBodyIndex];
@@ -200,7 +245,7 @@ static void prPreStepQueryCallback(int otherBodyIndex, void *ctx) {
         // NOTE: `hmdel()` returns `0` if `key` is not in `queryCtx->world->cache`!
         hmdel(queryCtx->world->cache, key);
 
-        return;
+        return false;
     }
 
     prContactCacheEntry *entry = hmgetp_null(queryCtx->world->cache, key);
@@ -241,10 +286,11 @@ static void prPreStepQueryCallback(int otherBodyIndex, void *ctx) {
     hmputs(
         queryCtx->world->cache,
         ((prContactCacheEntry) {
-            .key = key,
-            .value = collision
+            .key = key, .value = collision 
         })
     );
+
+    return true;
 }
 
 /* Finds all pairs of bodies in `w` that are colliding. */
@@ -256,8 +302,8 @@ static void prPreStepWorld(prWorld *w) {
         prQuerySpatialHash(
             w->hash, 
             prGetBodyAABB(w->bodies[i]), 
-            prPreStepQueryCallback, 
-            &(prPreStepQueryContext) {
+            prPreStepHashQueryCallback, 
+            &(prPreStepHashQueryCtx) {
                 .world = w, .bodyIndex = i
             }
         );
