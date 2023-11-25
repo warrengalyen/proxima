@@ -583,6 +583,8 @@ bool prComputeRaycast(const prBody *b, prRay ray, prRaycastHit *raycastHit) {
         bool result = (lambda >= 0.0f) && (lambda <= ray.maxDistance);
 
         if (raycastHit != NULL) {
+            raycastHit->body = (prBody *) b;
+
             raycastHit->point = prVector2Add(
                 ray.origin, 
                 prVector2ScalarMultiply(ray.direction, lambda)
@@ -637,8 +639,10 @@ bool prComputeRaycast(const prBody *b, prRay ray, prRaycastHit *raycastHit) {
             }
         }
 
-        if (raycastHit != NULL) 
+        if (raycastHit != NULL) {
+            raycastHit->body = (prBody *) b;
             raycastHit->inside = (intersectionCount & 1);
+        }
 
         return (!(raycastHit->inside) && (intersectionCount > 0));
     } else {

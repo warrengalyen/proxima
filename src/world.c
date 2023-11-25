@@ -50,6 +50,13 @@ typedef struct _prPreStepHashQueryCtx {
     int bodyIndex;
 } prPreStepHashQueryCtx;
 
+/* A structure that represents the context data for `prRaycastHashQueryCallback()`. */
+typedef struct _prRaycastHashQueryCtx {
+    prRay ray;
+    prWorld *world;
+    prRaycastQueryFunc func;
+} prRaycastHashQueryCtx;
+
 /* Private Function Prototypes ========================================================== */
 
 /* 
@@ -57,6 +64,12 @@ typedef struct _prPreStepHashQueryCtx {
     that will be called during `prPreStepWorld()`. 
 */
 static bool prPreStepHashQueryCallback(int otherIndex, void *ctx);
+
+/* 
+    A callback function for `prQuerySpatialHash()` 
+    that will be called during `prComputeRaycastForWorld()`.
+*/
+static bool prRaycastHashQueryCallback(int bodyIndex, void *ctx);
 
 /* Finds all pairs of bodies in `w` that are colliding. */
 static void prPreStepWorld(prWorld *w);
@@ -217,7 +230,19 @@ void prComputeRaycastForWorld(prWorld *w, prRay ray, prRaycastQueryFunc func) {
         )
     );
 
-    /* TODO: ... */
+     prQuerySpatialHash(
+        w->hash,
+        (prAABB) {
+            .x = fminf(minVertex.x, maxVertex.x),
+            .y = fminf(minVertex.y, maxVertex.y),
+            .width = fabsf(maxVertex.x - minVertex.x),
+            .height = fabsf(maxVertex.y - minVertex.y)
+        },
+        prRaycastHashQueryCallback,
+        &(prRaycastHashQueryCtx) {
+            .ray = ray, .world = w, .func = func
+        }
+    );
 }
 
 /* Private Functions ==================================================================== */
@@ -289,6 +314,26 @@ static bool prPreStepHashQueryCallback(int otherBodyIndex, void *ctx) {
             .key = key, .value = collision 
         })
     );
+
+    return true;
+}
+
+/* 
+    A callback function for `prQuerySpatialHash()` 
+    that will be called during `prComputeRaycastForWorld()`.
+*/
+static bool prRaycastHashQueryCallback(int bodyIndex, void *ctx) {
+    prRaycastHashQueryCtx *queryCtx = ctx;
+
+    prRaycastHit raycastHit = { .distance = 0.0f };
+
+    if (!prComputeRaycast(
+        queryCtx->world->bodies[bodyIndex],
+        queryCtx->ray,
+        &raycastHit
+    )) return false;
+
+    queryCtx->func(raycastHit);
 
     return true;
 }
