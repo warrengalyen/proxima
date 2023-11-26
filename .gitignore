@@ -12,6 +12,7 @@
 *.lib
 
 # Build output
+*.out
 **/bin/
 **/build/
 **/**/Debug/
