@@ -41,6 +41,7 @@ struct _prWorld {
     prBody **bodies;
     prSpatialHash *hash;
     prContactCacheEntry *cache;
+    prCollisionHandler handler;
     float accumulator, timestamp;
 };
 
@@ -160,6 +161,11 @@ prVector2 prGetWorldGravity(const prWorld *w) {
     return (w != NULL) ? w->gravity : PR_API_STRUCT_ZERO(prVector2);
 }
 
+/* Sets the collision event `handler` of `w`. */
+void prSetWorldCollisionHandler(prWorld *w, prCollisionHandler handler) {
+    if (w != NULL) w->handler = handler;
+}
+
 /* Sets the `gravity` acceleration vector of `w`. */
 void prSetWorldGravity(prWorld *w, prVector2 gravity) {
     if (w != NULL) w->gravity = gravity;
@@ -170,6 +176,10 @@ void prStepWorld(prWorld *w, float dt) {
     if (w == NULL || dt <= 0.0f) return;
 
     prPreStepWorld(w);
+
+    for (int i = 0; i < arrlen(w->cache); i++)
+        if (w->handler.preStep != NULL)
+            w->handler.preStep(w->cache[i].key, &w->cache[i].value);
 
     for (int i = 0; i < arrlen(w->bodies); i++) {
         prApplyGravityToBody(w->bodies[i], w->gravity);
@@ -190,6 +200,10 @@ void prStepWorld(prWorld *w, float dt) {
 
     for (int i = 0; i < arrlen(w->bodies); i++)
         prIntegrateForBodyPosition(w->bodies[i], dt);
+
+    for (int i = 0; i < arrlen(w->cache); i++)
+        if (w->handler.postStep != NULL) 
+            w->handler.postStep(w->cache[i].key, &w->cache[i].value);
 
     prPostStepWorld(w);
 }

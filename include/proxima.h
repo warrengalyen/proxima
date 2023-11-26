@@ -88,6 +88,18 @@ typedef struct _prAABB {
     float x, y, width, height;
 } prAABB;
 
+/*
+    A structure that repreents a collision shape,
+    which can be attached to a rigid body.
+*/
+typedef struct _prShape prShape;
+
+/* A structure that represetns a rigid body. */
+typedef struct _prBody prBody;
+
+/* A structure that represents a simulation container. */
+typedef struct _prWorld prWorld;
+
 /* (From 'broad-phase.c') =============================================================== */
 
 /* A structure that represents a spatial hash. */
@@ -122,6 +134,15 @@ typedef struct _prRay {
     float maxDistance;
 } prRay;
 
+/* A struct that represents the information about a raycast hit. */
+typedef struct _prRaycastHit {
+    prBody *body;
+    prVector2 point;
+    prVector2 normal;
+    float distance;
+    bool inside;
+} prRaycastHit;
+
 /* (From 'geometry.c') ================================================================== */
 
 /* An enumeration that represents the type of a collision shape. */
@@ -143,12 +164,6 @@ typedef struct _prVertices {
     prVector2 data[PR_GEOMETRY_MAX_VERTEX_COUNT];
     int count;
 } prVertices;
-
-/*
-    A structure that represents a collision shape,
-    which can be attached to a rigid body.
-*/
-typedef struct _prShape prShape;
 
 /* (From 'rigid-body.c') ================================================================ */
 
@@ -182,28 +197,20 @@ typedef struct _prTransform {
     float angle;
 } prTransform;
 
-/* A structure that represents a rigid body. */
-typedef struct _prBody prBody;
-
 /* A structure that represents a pair of two rigid bodies. */
 typedef struct _prBodyPair {
     prBody *first, *second;
 } prBodyPair;
 
-/* A struct that represents the information about a raycast hit. */
-typedef struct _prRaycastHit {
-    prBody *body;
-    prVector2 point;
-    prVector2 normal;
-    float distance;
-    bool inside;
-} prRaycastHit;
-
-
 /* (From 'world.c') ===================================================================== */
 
-/* A structure that represents a simulation container. */
-typedef struct _prWorld prWorld;
+/* A callbvack function type for a collision event. */
+typedef bool (*prCollisionEventFunc)(prBodyPair key, const prCollision *value);
+
+/* A structure that represents the collision event callback functions. */
+typedef struct _prCollisionHandler {
+    prCollisionEventFunc preStep, postStep;
+} prCollisionHandler;
 
 /* A callback function type for `prComputeRaycastForWorld()`. */
 typedef void (*prRaycastQueryFunc)(prRaycastHit raycastHit);
@@ -470,6 +477,9 @@ int prGetBodyCountForWorld(const prWorld *w);
 
 /* Returns the gravity acceleration vector of `w`. */
 prVector2 prGetWorldGravity(const prWorld *w);
+
+/* Sets the collision event `handler` of `w`. */
+void prSetWorldCollisionHandler(prWorld *w, prCollisionHandler handler);
 
 /* Sets the `gravity` acceleration vector of `w`. */
 void prSetWorldGravity(prWorld *w, prVector2 gravity);

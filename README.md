@@ -23,7 +23,7 @@ Documentation &mdash;
 - Narrow-phase collision detection with SAT (Separating Axis Theorem)
 - Numerical integration with semi-implicit Euler method
 - Projected Gauss-Seidel iterative constraint solver
-- ~~Support for basic collision event callbacks~~
+- Support for basic collision event callbacks
 - WebAssembly examples powered by [raylib](https://github.com/raysan5/raylib)
 
 // TODO: ...
