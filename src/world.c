@@ -187,6 +187,13 @@ void prStepWorld(prWorld *w, float dt) {
         prIntegrateForBodyVelocity(w->bodies[i], dt);
     }
 
+    for (int i = 0; i < hmlen(w->cache); i++)
+        prApplyAccumulatedImpulses(
+            w->cache[i].key.first,
+            w->cache[i].key.second,
+            &w->cache[i].value
+        );
+
     const float inverseDt = 1.0f / dt;
 
     for (int i = 0; i < PR_WORLD_ITERATION_COUNT; i++)
