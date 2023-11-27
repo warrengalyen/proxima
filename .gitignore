@@ -12,8 +12,9 @@
 *.lib
 
 # Build output
+*.data
+*.exe
+*.js
+*.html
 *.out
-**/bin/
-**/build/
-**/**/Debug/
-**/**/Release/
+*.wasm
