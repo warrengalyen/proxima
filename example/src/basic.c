@@ -112,7 +112,7 @@ static void InitExample(void) {
         prVector2PixelsToUnits(
            (prVector2) { 
                 .x = 0.5f * SCREEN_WIDTH,
-                .y = 0.5f * SCREEN_HEIGHT
+                .y = 0.35f * SCREEN_HEIGHT
             }
         ),
         prCreateRectangle(
@@ -125,7 +125,7 @@ static void InitExample(void) {
         )
     );
 
-    prSetBodyAngle(box, DEG2RAD * 25.0f);
+    // prSetBodyAngle(box, DEG2RAD * 25.0f);
 
     prAddBodyToWorld(world, box);
 }
