@@ -93,7 +93,7 @@ prShape *prCreateRectangle(prMaterial material, float width, float height) {
 
 /* Creates a 'convex polygon' collision shape. */
 prShape *prCreatePolygon(prMaterial material, const prVertices *vertices) {
-    if (vertices == NULL || vertices->data <= 0) return NULL;
+    if (vertices == NULL || vertices->count <= 0) return NULL;
 
     prShape *result = calloc(1, sizeof *result);
 
