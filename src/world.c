@@ -42,7 +42,7 @@ struct _prWorld {
     prSpatialHash *hash;
     prContactCacheEntry *cache;
     prCollisionHandler handler;
-    float accumulator, timestamp;
+    double accumulator, timestamp;
 };
 
 /* A structure that represents the context data for `prPreStepHashQueryCallback()`. */
@@ -327,7 +327,7 @@ static bool prPreStepHashQueryCallback(int otherBodyIndex, void *ctx) {
             collision.contacts[i].cache.tangentScalar = accTangentScalar;
         }
     } else {
-        collision.friction = prGetShapeFriction(s1) * prGetShapeFriction(s2);
+        collision.friction = 0.5f * (prGetShapeFriction(s1) + prGetShapeFriction(s2));
         collision.restitution = fminf(prGetShapeRestitution(s1), prGetShapeRestitution(s2));
 
         if (collision.friction <= 0.0f) collision.friction = 0.0f;

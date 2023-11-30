@@ -85,7 +85,10 @@ int main(void) {
 /* Private Functions ==================================================================== */
 
 static void InitExample(void) {
-    world = prCreateWorld(PR_WORLD_DEFAULT_GRAVITY, CELL_SIZE);
+    world = prCreateWorld(
+        prVector2ScalarMultiply(PR_WORLD_DEFAULT_GRAVITY, 4.0f),
+         CELL_SIZE
+    );
 
     ground = prCreateBodyFromShape(
         PR_BODY_STATIC,
