@@ -204,7 +204,7 @@ typedef struct _prBodyPair {
 
 /* (From 'world.c') ===================================================================== */
 
-/* A callbvack function type for a collision event. */
+/* A callback function type for a collision event. */
 typedef bool (*prCollisionEventFunc)(prBodyPair key, const prCollision *value);
 
 /* A structure that represents the collision event callback functions. */
@@ -224,6 +224,9 @@ prSpatialHash *prCreateSpatialHash(float cellSize);
 
 /* Releases the memory allocated for `sh`. */
 void prReleaseSpatialHash(prSpatialHash *sh);
+
+/* Return the cell size of `sh`. */
+float prGetSpatialHashCellSize(const prSpatialHash *sh);
 
 /* Erases all elements prom `sh`. */
 void prClearSpatialHash(prSpatialHash *sh);

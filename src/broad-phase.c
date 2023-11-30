@@ -93,6 +93,11 @@ void prClearSpatialHash(prSpatialHash *sh) {
         arrsetlen(sh->entries[i].value, 0);
 }
 
+/* Returns the cell size of `sh`. */
+float prGetSpatialHashCellSize(const prSpatialHash *sh) {
+    return (sh != NULL) ? sh->cellSize : 0.0f;
+}
+
 /* Inserts a `key`-`value` pair into `sh`. */
 void prInsertToSpatialHash(prSpatialHash *sh, prAABB key, int value) {
     if (sh == NULL) return;
