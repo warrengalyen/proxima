@@ -412,11 +412,14 @@ void prResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseD
         float tangentScalar = -prVector2Dot(relVelocity, ctxTangent) 
             * ctx->contacts[i].cache.tangentMass;
 
-        const float maxTangentScalar = fabsf(ctx->friction * normalScalar);
-
-        tangentScalar = fminf(fmaxf(tangentScalar, -maxTangentScalar), maxTangentScalar);
-
         {
+            const float maxTangentScalar = fabsf(ctx->friction * normalScalar);
+
+            tangentScalar = fminf(
+                fmaxf(tangentScalar, -maxTangentScalar),
+                maxTangentScalar
+            );
+
             // TODO: ...
             ctx->contacts[i].cache.tangentScalar = tangentScalar;
         }

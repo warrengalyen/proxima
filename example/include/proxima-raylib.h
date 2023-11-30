@@ -37,7 +37,7 @@ extern "C" {
 #define PR_DRAW_ARROW_HEAD_LENGTH     8.0f
 #define PR_DRAW_CIRCLE_SEGMENT_COUNT  32
 
-#define PR_DRAW_COLOR_MATTEBLACK      CLITERAL(Color) { 16, 16, 16, 255 }
+#define PR_DRAW_COLOR_MATTEBLACK      CLITERAL(Color) { 23, 23, 23, 255 }
 
 /* Public Function Prototypes =========================================================== */
 
