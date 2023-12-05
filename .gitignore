@@ -1,5 +1,7 @@
-# Backup files and configuration files
+# backup file
 *.bak
+
+# config file
 *.manifest
 **/.vs/
 **/.vscode/

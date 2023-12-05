@@ -1,12 +1,12 @@
 .PHONY: all clean
 
-_COLOR_BEGIN ?= \033[1;32m
-_COLOR_END ?= \033[m
+_COLOR_BEGIN = \033[1;32m
+_COLOR_END = \033[m
 
 PROJECT_NAME = proxima
 PROJECT_FULL_NAME = mechanika-design/proxima
 
-PROJECT_PREFIX ?= ${_COLOR_BEGIN}${PROJECT_FULL_NAME}:${_COLOR_END}
+PROJECT_PREFIX = ${_COLOR_BEGIN}${PROJECT_FULL_NAME}:${_COLOR_END}
 
 INCLUDE_PATH = include
 LIBRARY_PATH = lib
@@ -22,13 +22,15 @@ OBJECTS = \
 
 TARGETS = ${LIBRARY_PATH}/lib${PROJECT_NAME}.a
 
-CC ?= gcc
-AR ?= ar
+CC = cc
+AR = ar
 CFLAGS ?= -D_DEFAULT_SOURCE -g -I${INCLUDE_PATH} -O2 -std=gnu99
-LDLIBS ?= -lm
 
-# CFLAGS += -Wall -Wpedantic -Wno-unused-but-set-variable -Wno-unused-value \
-		-Wno-unused-variable
+# CFLAGS += -Wall -Wpedantic
+CFLAGS += -Wno-unused-command-line-argument  \
+	-Wno-unused-but-set-variable             \
+	-Wno-unused-value                        \
+	-Wno-unused-variable
 
 all: pre-build build post-build
 

@@ -1,8 +1,8 @@
 .PHONY: all clean
 .SUFFIXES: .c .exe .html .out
 
-_COLOR_BEGIN ?= \033[1;32m
-_COLOR_END ?= \033[m
+_COLOR_BEGIN = \033[1;32m
+_COLOR_END = \033[m
 
 PROJECT_NAME = proxima
 PROJECT_FULL_NAME = mechanika-design/proxima
@@ -19,7 +19,7 @@ TARGETS ?= \
 	${SOURCE_PATH}/raycast.out \
 	${SOURCE_PATH}/raylib.out
 
-CC ?= gcc
+CC = cc
 CFLAGS ?= -D_DEFAULT_SOURCE -g -I${INCLUDE_PATH} -I../${INCLUDE_PATH} -O2 -std=gnu99
 LDFLAGS ?= -L${LIBRARY_PATH}
 LDLIBS ?= -lproxima -lraylib -ldl -lGL -lm -lpthread -lrt -lX11
