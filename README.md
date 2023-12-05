@@ -131,7 +131,7 @@ make -f Makefile.drm
 
 Compiling for the Web requires installation of the [Emscripten SDK](https://emscripten.org/).
 
-### Ubuntu
+### Debian / Ubuntu
 
 ```console
 sudo apt install build-essential git
@@ -168,7 +168,7 @@ emrun --no_browser ./bin/basic.html
 <details>
 <summary>Cross-compiling from GNU/Linux to Windows (WSL2)</summary>
 
-### Ubuntu
+### Debian / Ubuntu
 
 ```console
 sudo apt install build-essential git mingw-w64
