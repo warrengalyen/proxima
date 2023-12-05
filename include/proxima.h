@@ -423,6 +423,9 @@ void prSetBodyAngularVelocity(prBody *b, float angularVelocity);
 /* Sets the user data of `b` to `ctx`. */
 void prSetBodyUserData(prBody *b, void *ctx);
 
+/* Checks if the given `point` lies inside `b`. */
+bool prBodyContainsPoint(const prBody *b, prVector2 point);
+
 /* Clears accumulated forces on `b`. */
 void prClearBodyForces(prBody *b);
 

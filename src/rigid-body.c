@@ -22,6 +22,8 @@
 
 /* Includes ============================================================================= */
 
+#include <float.h>
+
 #include "proxima.h"
 
 /* Typedefs ============================================================================= */
@@ -240,6 +242,39 @@ void prSetBodyAngularVelocity(prBody *b, float angularVelocity) {
 /* Sets the user data of `b` to `ctx`. */
 void prSetBodyUserData(prBody *b, void *ctx) {
     if (b != NULL) b->ctx = ctx;
+}
+
+/* Checks if the given `point` lies inside `b`. */
+bool prBodyContainsPoint(const prBody *b, prVector2 point) {
+    if (b == NULL) return false;
+
+    const prShape *s = prGetBodyShape(b);
+    prTransform tx = prGetBodyTransform(b);
+
+     prShapeType type = prGetShapeType(s);
+
+    if (type == PR_SHAPE_CIRCLE) {
+        float deltaX = point.x - tx.position.x;
+        float deltaY = point.y - tx.position.y;
+
+        float radius = prGetCircleRadius(s);
+
+        return (deltaX * deltaX) + (deltaY * deltaY) <= radius * radius;
+    } else if (type == PR_SHAPE_POLYGON) {
+        const prRay ray = { 
+            .origin = point, 
+            .direction = { .x = 1.0f, .y = 0.0f },
+            .maxDistance = FLT_MAX
+        };
+
+        prRaycastHit raycastHit = { .distance = 0.0f };
+
+        bool result = prComputeRaycast(b, ray, &raycastHit);
+
+        return raycastHit.inside;
+    } else {
+        return false;
+    }
 }
 
 /* Clears accumulated forces on `b`. */
