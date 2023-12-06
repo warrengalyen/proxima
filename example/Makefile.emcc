@@ -13,7 +13,8 @@ TARGETS = \
 	${SOURCE_PATH}/basic.html   \
 	${SOURCE_PATH}/bricks.html  \
 	${SOURCE_PATH}/raycast.html \
-	${SOURCE_PATH}/raylib.html
+	${SOURCE_PATH}/raylib.html  \
+	${SOURCE_PATH}/shoot.html
 
 CC = emcc
 CFLAGS = -D_DEFAULT_SOURCE -DPLATFORM_WEB -g -I${INCLUDE_PATH} -I../${INCLUDE_PATH} \

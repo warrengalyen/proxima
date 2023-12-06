@@ -205,7 +205,7 @@ typedef struct _prBodyPair {
 /* (From 'world.c') ===================================================================== */
 
 /* A callback function type for a collision event. */
-typedef bool (*prCollisionEventFunc)(prBodyPair key, const prCollision *value);
+typedef void (*prCollisionEventFunc)(prBodyPair key, prCollision *value);
 
 /* A structure that represents the collision event callback functions. */
 typedef struct _prCollisionHandler {

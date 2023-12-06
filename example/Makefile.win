@@ -1,7 +1,7 @@
 .PHONY: all clean
 
 # TODO: Edit these values to match your raylib installation path!
-RAYLIB_INCLUDE_PATH ?= C:/raylib/raylib/src
+RAYLIB_INCLUDE_PATH ?= C://raylib/raylib/src
 RAYLIB_LIBRARY_PATH ?= C://raylib/raylib/src
 
 INCLUDE_PATH = include
@@ -12,7 +12,8 @@ TARGETS = \
 	${SOURCE_PATH}/basic.exe   \
 	${SOURCE_PATH}/bricks.exe  \
 	${SOURCE_PATH}/raycast.exe \
-	${SOURCE_PATH}/raylib.exe
+	${SOURCE_PATH}/raylib.exe  \
+	${SOURCE_PATH}/shoot.exe 
 
 CC = x86_64-w64-mingw32-gcc
 CFLAGS = -D_DEFAULT_SOURCE -g -I${INCLUDE_PATH} -I../${INCLUDE_PATH} \

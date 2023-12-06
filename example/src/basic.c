@@ -43,13 +43,16 @@
 
 static const float CELL_SIZE = 4.0f, DELTA_TIME = 1.0f / TARGET_FPS;
 
+static const Rectangle SCREEN_BOUNDS = { 
+    .width = SCREEN_WIDTH, 
+    .height = SCREEN_HEIGHT 
+};
+
 /* Private Variables ==================================================================== */
 
 static prWorld *world;
 
 static prBody *box, *ground;
-
-static Rectangle bounds = { .width = SCREEN_WIDTH, .height = SCREEN_HEIGHT };
 
 /* Private Function Prototypes ========================================================== */
 
@@ -141,7 +144,7 @@ static void UpdateExample(void) {
             
         ClearBackground(PR_DRAW_COLOR_MATTEBLACK);
 
-        prDrawGrid(bounds, CELL_SIZE, 0.25f, ColorAlpha(DARKGRAY, 0.75f));
+        prDrawGrid(SCREEN_BOUNDS, CELL_SIZE, 0.25f, ColorAlpha(DARKGRAY, 0.75f));
 
         prDrawBodyLines(ground, 1.0f, GRAY);
 

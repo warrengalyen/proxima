@@ -1,3 +1,26 @@
+/*
+    Copyright (c) 2023 Warren Galyen <wgalyen@mechanikadesign.com>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+*/
+
+
 /* Includes ============================================================================= */
 
 #include "proxima.h"
@@ -23,13 +46,16 @@
 
 static const float CELL_SIZE = 4.0f, DELTA_TIME = 1.0f / TARGET_FPS;
 
+static const Rectangle SCREEN_BOUNDS = { 
+    .width = SCREEN_WIDTH, 
+    .height = SCREEN_HEIGHT 
+};
+
 /* Private Variables ==================================================================== */
 
 static prWorld *world;
 
 static prBody *player;
-
-static Rectangle bounds = { .width = SCREEN_WIDTH, .height = SCREEN_HEIGHT };
 
 /* Private Function Prototypes ========================================================== */
 
@@ -38,7 +64,8 @@ static void UpdateExample(void);
 static void DeinitExample(void);
 
 static void DrawCursor(void);
-static void RaycastQueryCallback(prRaycastHit raycastHit);
+
+static void OnRaycastQuery(prRaycastHit raycastHit);
 
 /* Public Functions ===================================================================== */
 
@@ -178,7 +205,7 @@ static void UpdateExample(void) {
 
         ClearBackground(PR_DRAW_COLOR_MATTEBLACK);
 
-        prDrawGrid(bounds, CELL_SIZE, 0.25f, ColorAlpha(DARKGRAY, 0.75f));
+        prDrawGrid(SCREEN_BOUNDS, CELL_SIZE, 0.25f, ColorAlpha(DARKGRAY, 0.75f));
 
         const int bodyCount = prGetBodyCountForWorld(world);
 
@@ -188,7 +215,7 @@ static void UpdateExample(void) {
             prDrawBodyLines(object, 2.0f, ColorAlpha(LIGHTGRAY, 0.95f));
         }
 
-        prComputeRaycastForWorld(world, ray, RaycastQueryCallback);
+        prComputeRaycastForWorld(world, ray, OnRaycastQuery);
 
         prDrawBodyLines(player, 2.0f, ColorAlpha(GREEN, 0.85f));
 
@@ -241,7 +268,7 @@ static void DrawCursor(void) {
     );
 }
 
-static void RaycastQueryCallback(prRaycastHit raycastHit) {
+static void OnRaycastQuery(prRaycastHit raycastHit) {
     prDrawBodyAABB(raycastHit.body, 1.0f, YELLOW);
 
     Vector2 center = {

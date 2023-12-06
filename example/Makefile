@@ -17,7 +17,8 @@ TARGETS ?= \
 	${SOURCE_PATH}/basic.out   \
 	${SOURCE_PATH}/bricks.out  \
 	${SOURCE_PATH}/raycast.out \
-	${SOURCE_PATH}/raylib.out
+	${SOURCE_PATH}/raylib.out  \
+	${SOURCE_PATH}/shoot.out
 
 CC = cc
 CFLAGS ?= -D_DEFAULT_SOURCE -g -I${INCLUDE_PATH} -I../${INCLUDE_PATH} -O2 -std=gnu99

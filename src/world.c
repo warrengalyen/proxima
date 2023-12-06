@@ -180,7 +180,7 @@ void prStepWorld(prWorld *w, float dt) {
 
     prPreStepWorld(w);
 
-    for (int i = 0; i < arrlen(w->cache); i++)
+    for (int i = 0; i < hmlen(w->cache); i++)
         if (w->handler.preStep != NULL)
             w->handler.preStep(w->cache[i].key, &w->cache[i].value);
 
@@ -211,7 +211,7 @@ void prStepWorld(prWorld *w, float dt) {
     for (int i = 0; i < arrlen(w->bodies); i++)
         prIntegrateForBodyPosition(w->bodies[i], dt);
 
-    for (int i = 0; i < arrlen(w->cache); i++)
+    for (int i = 0; i < hmlen(w->cache); i++)
         if (w->handler.postStep != NULL) 
             w->handler.postStep(w->cache[i].key, &w->cache[i].value);
 
@@ -309,9 +309,9 @@ static bool prPreStepHashQueryCallback(int otherBodyIndex, void *ctx) {
             int k = -1;
 
             for (int j = 0; j < entry->value.count; j++) {
-                const int edgeId = entry->value.contacts[j].edgeId;
+                const int id = entry->value.contacts[j].id;
 
-                if (collision.contacts[i].edgeId == edgeId) {
+                if (collision.contacts[i].id == id) {
                     k = j;
 
                     break;

@@ -53,12 +53,15 @@ typedef struct _Piece {
 
 static const float CELL_SIZE = 2.8f, DELTA_TIME = 1.0f / TARGET_FPS;
 
+static const Rectangle SCREEN_BOUNDS = { 
+    .width = SCREEN_WIDTH, 
+    .height = SCREEN_HEIGHT 
+};
+
 /* Private Variables ==================================================================== */
 
 static prWorld *world;
 static prBody *ball;
-
-static Rectangle bounds = { .width = SCREEN_WIDTH, .height = SCREEN_HEIGHT };
 
 static Texture2D raylibTexture;
 
@@ -175,6 +178,23 @@ static void InitExample(void) {
 }
 
 static void UpdateExample(void) {
+    for (int i = 0; i < LOGO_WIDTH_IN_PIECES * LOGO_HEIGHT_IN_PIECES; i++) {
+        prAABB aabb = prGetBodyAABB(pieces[i].body);
+
+        if (CheckCollisionRecs(
+            (Rectangle) {
+                .x = prUnitsToPixels(aabb.x),
+                .y = prUnitsToPixels(aabb.y),
+                .width = prUnitsToPixels(aabb.width), 
+                .height = prUnitsToPixels(aabb.height)
+            },
+            SCREEN_BOUNDS
+        )) continue;
+
+        if (prRemoveBodyFromWorld(world, pieces[i].body))
+            pieces[i].body = NULL;
+    }
+
     prUpdateWorld(world, DELTA_TIME);
 
     {
@@ -182,9 +202,11 @@ static void UpdateExample(void) {
             
         ClearBackground(PR_DRAW_COLOR_MATTEBLACK);
 
-        prDrawGrid(bounds, CELL_SIZE, 0.25f, ColorAlpha(DARKGRAY, 0.75f));
+        prDrawGrid(SCREEN_BOUNDS, CELL_SIZE, 0.25f, ColorAlpha(DARKGRAY, 0.75f));
 
         for (int i = 0; i < LOGO_WIDTH_IN_PIECES * LOGO_HEIGHT_IN_PIECES; i++) {
+            if (pieces[i].body == NULL) continue;
+
             const prVector2 bodyPosition = prGetBodyPosition(pieces[i].body);
 
             DrawTexturePro(
@@ -211,6 +233,21 @@ static void UpdateExample(void) {
         }
 
         prDrawBodyLines(ball, 1.0f, WHITE);
+
+        const Font font = GetFontDefault();
+
+        DrawTextEx(
+            font,
+            TextFormat(
+                "%d/%d bodies", 
+                prGetBodyCountForWorld(world),
+                PR_WORLD_MAX_OBJECT_COUNT
+            ),
+            (Vector2) { .x = 8.0f, .y = 32.0f },
+            font.baseSize,
+            2.0f,
+            WHITE
+        );
 
         DrawFPS(8, 8);
 
