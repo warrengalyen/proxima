@@ -34,6 +34,8 @@ extern "C" {
 
 /* Macros =============================================================================== */
 
+// clang-format off
+
 #define PR_DRAW_ARROW_HEAD_LENGTH    8.0f
 #define PR_DRAW_CIRCLE_SEGMENT_COUNT 32
 
@@ -41,6 +43,8 @@ extern "C" {
     CLITERAL(Color) {            \
         23, 23, 23, 255          \
     }
+
+// clang-format on
 
 /* Public Function Prototypes =========================================================== */
 
