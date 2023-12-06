@@ -56,7 +56,7 @@ extern "C" {
 #define PR_WORLD_DEFAULT_GRAVITY      ((prVector2) { .y = 9.8f })
 
 /* Defines the iteration count for the constraint solver. */
-#define PR_WORLD_ITERATION_COUNT      10
+#define PR_WORLD_ITERATION_COUNT      12
 
 /* Defines the maximum number of objects in a world. */
 #define PR_WORLD_MAX_OBJECT_COUNT     4096
@@ -239,7 +239,10 @@ void prClearSpatialHash(prSpatialHash *sh);
 void prInsertToSpatialHash(prSpatialHash *sh, prAABB key, int value);
 
 /* Query `sh` for any objects that overlap the given `aabb`. */
-void prQuerySpatialHash(prSpatialHash *sh, prAABB aabb, prHashQueryFunc func, void *ctx);
+void prQuerySpatialHash(prSpatialHash *sh,
+                        prAABB aabb,
+                        prHashQueryFunc func,
+                        void *ctx);
 
 /* (From 'collision.c') ================================================================= */
 
@@ -247,10 +250,11 @@ void prQuerySpatialHash(prSpatialHash *sh, prAABB aabb, prHashQueryFunc func, vo
     Checks whether `s1` and `s2` are colliding,
     then stores the collision information to `collision`.
 */
-bool prComputeCollision(
-    const prShape *s1, prTransform tx1,
-    const prShape *s2, prTransform tx2,
-    prCollision *collision);
+bool prComputeCollision(const prShape *s1,
+                        prTransform tx1,
+                        const prShape *s2,
+                        prTransform tx2,
+                        prCollision *collision);
 
 /* Casts a `ray` against `b`. */
 bool prComputeRaycast(const prBody *b, prRay ray, prRaycastHit *raycastHit);
@@ -455,7 +459,10 @@ void prIntegrateForBodyVelocity(prBody *b, float dt);
 void prIntegrateForBodyPosition(prBody *b, float dt);
 
 /* Resolves the collision between `b1` and `b2`. */
-void prResolveCollision(prBody *b1, prBody *b2, prCollision *ctx, float inverseDt);
+void prResolveCollision(prBody *b1,
+                        prBody *b2,
+                        prCollision *ctx,
+                        float inverseDt);
 
 /* (From 'timer.c') ===================================================================== */
 
@@ -569,7 +576,8 @@ PR_API_INLINE float prVector2Distance(prVector2 v1, prVector2 v2) {
 PR_API_INLINE prVector2 prVector2Normalize(prVector2 v) {
     const float magnitude = prVector2Magnitude(v);
 
-    return (magnitude > 0.0f) ? prVector2ScalarMultiply(v, 1.0f / magnitude) : v;
+    return (magnitude > 0.0f) ? prVector2ScalarMultiply(v, 1.0f / magnitude)
+                              : v;
 }
 
 /* Returns the left normal vector of `v`. */
@@ -587,18 +595,13 @@ PR_API_INLINE prVector2 prVector2Rotate(prVector2 v, float angle) {
     const float _sin = sinf(angle);
     const float _cos = cosf(angle);
 
-    return (prVector2) {
-        v.x * _cos - v.y * _sin,
-        v.x * _sin + v.y * _cos
-    };
+    return (prVector2) { v.x * _cos - v.y * _sin, v.x * _sin + v.y * _cos };
 }
 
 /* Rotates `v` through `tx` about the origin of a coordinate plane. */
 PR_API_INLINE prVector2 prVector2RotateTx(prVector2 v, prTransform tx) {
-    return (prVector2) {
-        v.x * tx.rotation._cos - v.y * tx.rotation._sin,
-        v.x * tx.rotation._sin + v.y * tx.rotation._cos
-    };
+    return (prVector2) { v.x * tx.rotation._cos - v.y * tx.rotation._sin,
+                         v.x * tx.rotation._sin + v.y * tx.rotation._cos };
 }
 
 /* Transforms `v` through `tx` about the origin of a coordinate plane. */
@@ -619,7 +622,8 @@ PR_API_INLINE float prVector2Angle(prVector2 v1, prVector2 v2) {
     a positive integer value if `v1, `v2` and `v3` form a counter-clockwise angle
     and zero if `v1, `v2` and `v3` are collinear.
 */
-PR_API_INLINE int prVector2CounterClockwise(prVector2 v1, prVector2 v2, prVector2 v3) {
+PR_API_INLINE int
+prVector2CounterClockwise(prVector2 v1, prVector2 v2, prVector2 v3) {
     /*
        `v1`
         *
@@ -669,4 +673,4 @@ PR_API_INLINE float prUnitsToPixels(float k) {
 }
 #endif
 
-#endif // PROXIMA_H
+#endif  // PROXIMA_H

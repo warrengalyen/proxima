@@ -48,63 +48,61 @@ static bool prClipEdge(prEdge *e, prVector2 v, float dot);
     assuming `s1` and `s2` are 'circle' collision shapes,
     then stores the collision information to `collision`.
 */
-static bool prComputeCollisionCircles(
-    const prShape *s1, prTransform tx1, 
-    const prShape *s2, prTransform tx2,
-    prCollision *collision
-);
+static bool prComputeCollisionCircles(const prShape *s1,
+                                      prTransform tx1,
+                                      const prShape *s2,
+                                      prTransform tx2,
+                                      prCollision *collision);
 
 /* 
     Checks whether `s1` and `s2` are colliding,
     assuming `s1` is a 'circle' collision shape and `s2` is a 'polygon' collision shape,
     then stores the collision information to `collision`.
 */
-static bool prComputeCollisionCirclePoly(
-    const prShape *s1, prTransform tx1, 
-    const prShape *s2, prTransform tx2,
-    prCollision *collision
-);
+static bool prComputeCollisionCirclePoly(const prShape *s1,
+                                         prTransform tx1,
+                                         const prShape *s2,
+                                         prTransform tx2,
+                                         prCollision *collision);
 
 /* 
     Checks whether `s1` and `s2` are colliding,
     assuming `s1` and `s2` are 'polygon' collision shapes,
     then stores the collision information to `collision`.
 */
-static bool prComputeCollisionPolys(
-    const prShape *s1, prTransform tx1, 
-    const prShape *s2, prTransform tx2,
-    prCollision *collision
-);
+static bool prComputeCollisionPolys(const prShape *s1,
+                                    prTransform tx1,
+                                    const prShape *s2,
+                                    prTransform tx2,
+                                    prCollision *collision);
 
 /* Computes the intersection of a circle and a line. */
-static bool prComputeIntersectionCircleLine(
-    prVector2 center, float radius,
-    prVector2 origin, prVector2 direction,
-    float *lambda
-);
+static bool prComputeIntersectionCircleLine(prVector2 center,
+                                            float radius,
+                                            prVector2 origin,
+                                            prVector2 direction,
+                                            float *lambda);
 
 /* Computes the intersection of two lines. */
-static bool prComputeIntersectionLines(
-    prVector2 origin1, prVector2 direction1,
-    prVector2 origin2, prVector2 direction2,
-    float *lambda
-);
+static bool prComputeIntersectionLines(prVector2 origin1,
+                                       prVector2 direction1,
+                                       prVector2 origin2,
+                                       prVector2 direction2,
+                                       float *lambda);
 
 /* Returns the edge of `s` that is most perpendicular to `v`. */
 static prEdge prGetContactEdge(const prShape *s, prTransform tx, prVector2 v);
 
 /* Finds the axis of minimum penetration from `s1` to `s2`, then returns its index. */
-static int prGetSeparatingAxisIndex(
-    const prShape *s1, prTransform tx1, 
-    const prShape *s2, prTransform tx2,
-    float *depth
-);
+static int prGetSeparatingAxisIndex(const prShape *s1,
+                                    prTransform tx1,
+                                    const prShape *s2,
+                                    prTransform tx2,
+                                    float *depth);
 
 /* Finds the vertex farthest along `v`, then returns its index. */
-static int prGetSupportPointIndex(
-    const prVertices *vertices, 
-    prTransform tx, prVector2 v
-);
+static int
+prGetSupportPointIndex(const prVertices *vertices, prTransform tx, prVector2 v);
 
 /* Public Functions ===================================================================== */
 
@@ -112,11 +110,11 @@ static int prGetSupportPointIndex(
     Checks whether `s1` and `s2` are colliding,
     then stores the collision information to `collision`.
 */
-bool prComputeCollision(
-    const prShape *s1, prTransform tx1, 
-    const prShape *s2, prTransform tx2,
-    prCollision *collision
-) {
+bool prComputeCollision(const prShape *s1,
+                        prTransform tx1,
+                        const prShape *s2,
+                        prTransform tx2,
+                        prCollision *collision) {
     if (s1 == NULL || s2 == NULL) return false;
 
     prShapeType t1 = prGetShapeType(s1);
@@ -124,12 +122,13 @@ bool prComputeCollision(
 
     if (t1 == PR_SHAPE_CIRCLE && t2 == PR_SHAPE_CIRCLE)
         return prComputeCollisionCircles(s1, tx1, s2, tx2, collision);
-    else if ((t1 == PR_SHAPE_CIRCLE && t2 == PR_SHAPE_POLYGON) 
-        || (t1 == PR_SHAPE_POLYGON && t2 == PR_SHAPE_CIRCLE))
+    else if ((t1 == PR_SHAPE_CIRCLE && t2 == PR_SHAPE_POLYGON)
+             || (t1 == PR_SHAPE_POLYGON && t2 == PR_SHAPE_CIRCLE))
         return prComputeCollisionCirclePoly(s1, tx1, s2, tx2, collision);
     else if (t1 == PR_SHAPE_POLYGON && t2 == PR_SHAPE_POLYGON)
         return prComputeCollisionPolys(s1, tx1, s2, tx2, collision);
-    else return false;
+    else
+        return false;
 }
 
 bool prComputeRaycast(const prBody *b, prRay ray, prRaycastHit *raycastHit) {
@@ -144,11 +143,11 @@ bool prComputeRaycast(const prBody *b, prRay ray, prRaycastHit *raycastHit) {
     float lambda = FLT_MAX;
 
     if (type == PR_SHAPE_CIRCLE) {
-        bool intersects = prComputeIntersectionCircleLine(
-            tx.position, prGetCircleRadius(s),
-            ray.origin, ray.direction,
-            &lambda
-        );
+        bool intersects = prComputeIntersectionCircleLine(tx.position,
+                                                          prGetCircleRadius(s),
+                                                          ray.origin,
+                                                          ray.direction,
+                                                          &lambda);
 
         bool result = (lambda >= 0.0f) && (lambda <= ray.maxDistance);
 
@@ -156,13 +155,10 @@ bool prComputeRaycast(const prBody *b, prRay ray, prRaycastHit *raycastHit) {
             raycastHit->body = (prBody *) b;
 
             raycastHit->point = prVector2Add(
-                ray.origin, 
-                prVector2ScalarMultiply(ray.direction, lambda)
-            );
+                ray.origin, prVector2ScalarMultiply(ray.direction, lambda));
 
             raycastHit->normal = prVector2LeftNormal(
-                prVector2Subtract(ray.origin, raycastHit->point)
-            );
+                prVector2Subtract(ray.origin, raycastHit->point));
             raycastHit->distance = lambda;
             raycastHit->inside = (lambda < 0.0f);
         }
@@ -175,35 +171,32 @@ bool prComputeRaycast(const prBody *b, prRay ray, prRaycastHit *raycastHit) {
 
         float minLambda = FLT_MAX;
 
-        for (int j = vertices->count - 1, i = 0; i < vertices->count; j = i, i++) {
+        for (int j = vertices->count - 1, i = 0; i < vertices->count;
+             j = i, i++) {
             prVector2 v1 = prVector2Transform(vertices->data[i], tx);
             prVector2 v2 = prVector2Transform(vertices->data[j], tx);
 
             prVector2 edgeVector = prVector2Subtract(v1, v2);
-            
-            bool intersects = prComputeIntersectionLines(
-                ray.origin, ray.direction, 
-                v2, edgeVector, 
-                &lambda
-            );
-            
+
+            bool intersects = prComputeIntersectionLines(ray.origin,
+                                                         ray.direction,
+                                                         v2,
+                                                         edgeVector,
+                                                         &lambda);
+
             if (intersects && lambda <= ray.maxDistance) {
                 if (minLambda > lambda) {
                     minLambda = lambda;
 
                     if (raycastHit != NULL) {
                         raycastHit->point = prVector2Add(
-                            ray.origin, 
-                            prVector2ScalarMultiply(
-                                ray.direction, 
-                                minLambda
-                            )
-                        );
+                            ray.origin,
+                            prVector2ScalarMultiply(ray.direction, minLambda));
 
                         raycastHit->normal = prVector2LeftNormal(edgeVector);
                     }
                 }
-                
+
                 intersectionCount++;
             }
         }
@@ -235,14 +228,10 @@ static bool prClipEdge(prEdge *e, prVector2 v, float dot) {
         return true;
     } else {
         prVector2 edgeVector = prVector2Subtract(e->data[1], e->data[0]);
-    
+
         prVector2 midpoint = prVector2Add(
-            e->data[0], 
-            prVector2ScalarMultiply(
-                edgeVector, 
-                (dot1 / (dot1 - dot2))
-            )
-        );
+            e->data[0],
+            prVector2ScalarMultiply(edgeVector, (dot1 / (dot1 - dot2))));
 
         if (dot1 > 0.0f && dot2 < 0.0f) {
             e->data[1] = midpoint, e->count = 2;
@@ -263,11 +252,11 @@ static bool prClipEdge(prEdge *e, prVector2 v, float dot) {
     assuming `s1` and `s2` are 'circle' collision shapes,
     then stores the collision information to `collision`.
 */
-static bool prComputeCollisionCircles(
-    const prShape *s1, prTransform tx1, 
-    const prShape *s2, prTransform tx2,
-    prCollision *collision
-) {
+static bool prComputeCollisionCircles(const prShape *s1,
+                                      prTransform tx1,
+                                      const prShape *s2,
+                                      prTransform tx2,
+                                      prCollision *collision) {
     prVector2 direction = prVector2Subtract(tx2.position, tx1.position);
 
     float radiusSum = prGetCircleRadius(s1) + prGetCircleRadius(s2);
@@ -279,18 +268,20 @@ static bool prComputeCollisionCircles(
         float magnitude = sqrtf(magnitudeSqr);
 
         collision->direction = (magnitude > 0.0f)
-            ? prVector2ScalarMultiply(direction, 1.0f / magnitude)
-            : (prVector2) { .x = 1.0f };
+                                   ? prVector2ScalarMultiply(direction,
+                                                             1.0f / magnitude)
+                                   : (prVector2) { .x = 1.0f };
 
         collision->contacts[0].id = 0;
 
-        collision->contacts[0].point = prVector2Transform(
-            prVector2ScalarMultiply(collision->direction, prGetCircleRadius(s1)), tx1
-        );
+        collision->contacts[0].point =
+            prVector2Transform(prVector2ScalarMultiply(collision->direction,
+                                                       prGetCircleRadius(s1)),
+                               tx1);
 
         collision->contacts[0].depth = (magnitude > 0.0f)
-            ? radiusSum - magnitude
-            : prGetCircleRadius(s1);
+                                           ? radiusSum - magnitude
+                                           : prGetCircleRadius(s1);
 
         collision->contacts[1] = collision->contacts[0];
 
@@ -305,11 +296,11 @@ static bool prComputeCollisionCircles(
     assuming `s1` is a 'circle' collision shape and `s2` is a 'polygon' collision shape,
     then stores the collision information to `collision`.
 */
-static bool prComputeCollisionCirclePoly(
-    const prShape *s1, prTransform tx1, 
-    const prShape *s2, prTransform tx2,
-    prCollision *collision
-) {
+static bool prComputeCollisionCirclePoly(const prShape *s1,
+                                         prTransform tx1,
+                                         const prShape *s2,
+                                         prTransform tx2,
+                                         prCollision *collision) {
     prShape *circle, *poly;
     prTransform circleTx, polyTx;
 
@@ -323,15 +314,14 @@ static bool prComputeCollisionCirclePoly(
 
     const prVertices *vertices = prGetPolygonVertices(poly);
     const prVertices *normals = prGetPolygonNormals(poly);
-    
+
     /*
         NOTE: `txCenter` refers to the center of the 'circle' collision shape
         transformed to the local space of the 'polygon' collision shape.
     */
-    prVector2 txCenter = prVector2Rotate(
-        prVector2Subtract(circleTx.position, polyTx.position), 
-        -polyTx.angle
-    );
+    prVector2 txCenter = prVector2Rotate(prVector2Subtract(circleTx.position,
+                                                           polyTx.position),
+                                         -polyTx.angle);
 
     float radius = prGetCircleRadius(circle), maxDot = -FLT_MAX;
 
@@ -342,13 +332,12 @@ static bool prComputeCollisionCirclePoly(
         closest to the center of the 'circle' collision shape.
     */
     for (int i = 0; i < vertices->count; i++) {
-        float dot = prVector2Dot(
-            normals->data[i], 
-            prVector2Subtract(txCenter, vertices->data[i])
-        );
+        float dot = prVector2Dot(normals->data[i],
+                                 prVector2Subtract(txCenter,
+                                                   vertices->data[i]));
 
         if (dot > radius) return false;
-        
+
         if (maxDot < dot) maxDot = dot, maxIndex = i;
     }
 
@@ -361,10 +350,10 @@ static bool prComputeCollisionCirclePoly(
     if (maxDot < 0.0f) {
         if (collision != NULL) {
             collision->direction = prVector2Negate(
-                prVector2RotateTx(normals->data[maxIndex], polyTx)
-            );
+                prVector2RotateTx(normals->data[maxIndex], polyTx));
 
-            prVector2 deltaPosition = prVector2Subtract(tx2.position, tx1.position);
+            prVector2 deltaPosition = prVector2Subtract(tx2.position,
+                                                        tx1.position);
 
             if (prVector2Dot(deltaPosition, collision->direction) < 0.0f)
                 collision->direction = prVector2Negate(collision->direction);
@@ -373,8 +362,7 @@ static bool prComputeCollisionCirclePoly(
 
             collision->contacts[0].point = prVector2Add(
                 circleTx.position,
-                prVector2ScalarMultiply(collision->direction, radius)
-            );
+                prVector2ScalarMultiply(collision->direction, radius));
 
             collision->contacts[0].depth = radius - maxDot;
 
@@ -383,10 +371,9 @@ static bool prComputeCollisionCirclePoly(
             collision->count = 1;
         }
     } else {
-        prVector2 v1 = (maxIndex > 0)
-            ? vertices->data[maxIndex - 1]
-            : vertices->data[vertices->count - 1];
-        
+        prVector2 v1 = (maxIndex > 0) ? vertices->data[maxIndex - 1]
+                                      : vertices->data[vertices->count - 1];
+
         prVector2 v2 = vertices->data[maxIndex];
 
         prVector2 edgeVector = prVector2Subtract(v2, v1);
@@ -411,27 +398,28 @@ static bool prComputeCollisionCirclePoly(
             if (collision != NULL) {
                 float magnitude = sqrtf(magnitudeSqr);
 
-                collision->direction = (magnitude > 0.0f)
-                    ? prVector2ScalarMultiply(
-                        prVector2RotateTx(prVector2Negate(direction), polyTx), 
-                        1.0f / magnitude
-                    )
-                    : PR_API_STRUCT_ZERO(prVector2);
+                collision->direction =
+                    (magnitude > 0.0f) ? prVector2ScalarMultiply(
+                        prVector2RotateTx(prVector2Negate(direction), polyTx),
+                        1.0f / magnitude)
+                                       : PR_API_STRUCT_ZERO(prVector2);
 
-                prVector2 deltaPosition = prVector2Subtract(tx2.position, tx1.position);
+                prVector2 deltaPosition = prVector2Subtract(tx2.position,
+                                                            tx1.position);
 
                 if (prVector2Dot(deltaPosition, collision->direction) < 0.0f)
-                    collision->direction = prVector2Negate(collision->direction);
+                    collision->direction = prVector2Negate(
+                        collision->direction);
 
                 collision->contacts[0].id = 0;
 
                 collision->contacts[0].point = prVector2Transform(
-                    prVector2ScalarMultiply(collision->direction, radius), circleTx
-                );
+                    prVector2ScalarMultiply(collision->direction, radius),
+                    circleTx);
 
                 collision->contacts[0].depth = (magnitude > 0.0f)
-                    ? radius - magnitude
-                    : radius;
+                                                   ? radius - magnitude
+                                                   : radius;
 
                 collision->contacts[1] = collision->contacts[0];
 
@@ -440,20 +428,20 @@ static bool prComputeCollisionCirclePoly(
         } else {
             if (collision != NULL) {
                 collision->direction = prVector2Negate(
-                    prVector2RotateTx(normals->data[maxIndex], polyTx)
-                );
+                    prVector2RotateTx(normals->data[maxIndex], polyTx));
 
-                prVector2 deltaPosition = prVector2Subtract(tx2.position, tx1.position);
+                prVector2 deltaPosition = prVector2Subtract(tx2.position,
+                                                            tx1.position);
 
                 if (prVector2Dot(deltaPosition, collision->direction) < 0.0f)
-                    collision->direction = prVector2Negate(collision->direction);
+                    collision->direction = prVector2Negate(
+                        collision->direction);
 
                 collision->contacts[0].id = 0;
 
                 collision->contacts[0].point = prVector2Add(
                     circleTx.position,
-                    prVector2ScalarMultiply(collision->direction, radius)
-                );
+                    prVector2ScalarMultiply(collision->direction, radius));
 
                 collision->contacts[0].depth = radius - maxDot;
 
@@ -472,25 +460,26 @@ static bool prComputeCollisionCirclePoly(
     assuming `s1` and `s2` are 'polygon' collision shapes,
     then stores the collision information to `collision`.
 */
-static bool prComputeCollisionPolys(
-    const prShape *s1, prTransform tx1, 
-    const prShape *s2, prTransform tx2,
-    prCollision *collision
-) {
+static bool prComputeCollisionPolys(const prShape *s1,
+                                    prTransform tx1,
+                                    const prShape *s2,
+                                    prTransform tx2,
+                                    prCollision *collision) {
     float maxDepth1 = FLT_MAX, maxDepth2 = FLT_MAX;
 
     int index1 = prGetSeparatingAxisIndex(s1, tx1, s2, tx2, &maxDepth1);
 
     if (maxDepth1 >= 0.0f) return false;
-    
+
     int index2 = prGetSeparatingAxisIndex(s2, tx2, s1, tx1, &maxDepth2);
 
     if (maxDepth2 >= 0.0f) return false;
 
     if (collision != NULL) {
-        prVector2 direction = (maxDepth1 > maxDepth2)
-            ? prVector2RotateTx(prGetPolygonNormal(s1, index1), tx1)
-            : prVector2RotateTx(prGetPolygonNormal(s2, index2), tx2);
+        prVector2 direction =
+            (maxDepth1 > maxDepth2)
+                ? prVector2RotateTx(prGetPolygonNormal(s1, index1), tx1)
+                : prVector2RotateTx(prGetPolygonNormal(s2, index2), tx2);
 
         prVector2 deltaPosition = prVector2Subtract(tx2.position, tx1.position);
 
@@ -515,36 +504,40 @@ static bool prComputeCollisionPolys(
         if (fabsf(edgeDot1) > fabsf(edgeDot2)) {
             refEdge = edge2, incEdge = edge1;
             refTx = tx2, incTx = tx1;
-            
+
             incEdgeFlipped = true;
         }
 
         prVector2 refEdgeVector = prVector2Normalize(
-            prVector2Subtract(refEdge.data[1], refEdge.data[0])
-        );
+            prVector2Subtract(refEdge.data[1], refEdge.data[0]));
 
         const float refDot1 = prVector2Dot(refEdge.data[0], refEdgeVector);
         const float refDot2 = prVector2Dot(refEdge.data[1], refEdgeVector);
 
         if (!prClipEdge(&incEdge, refEdgeVector, refDot1)) return false;
-        if (!prClipEdge(&incEdge, prVector2Negate(refEdgeVector), -refDot2)) return false;
+        if (!prClipEdge(&incEdge, prVector2Negate(refEdgeVector), -refDot2))
+            return false;
 
         prVector2 refEdgeNormal = prVector2RightNormal(refEdgeVector);
 
         const float maxDepth = prVector2Dot(refEdge.data[0], refEdgeNormal);
 
-        const float depth1 = prVector2Dot(incEdge.data[0], refEdgeNormal) - maxDepth;
-        const float depth2 = prVector2Dot(incEdge.data[1], refEdgeNormal) - maxDepth;
+        const float depth1 = prVector2Dot(incEdge.data[0], refEdgeNormal)
+                             - maxDepth;
+        const float depth2 = prVector2Dot(incEdge.data[1], refEdgeNormal)
+                             - maxDepth;
 
         collision->direction = direction;
 
-        collision->contacts[0].id = (!incEdgeFlipped) 
-            ? PR_GEOMETRY_MAX_VERTEX_COUNT + incEdge.indexes[0]
-            : incEdge.indexes[0];
+        collision->contacts[0].id = (!incEdgeFlipped)
+                                        ? PR_GEOMETRY_MAX_VERTEX_COUNT
+                                              + incEdge.indexes[0]
+                                        : incEdge.indexes[0];
 
-        collision->contacts[1].id = (!incEdgeFlipped) 
-            ? PR_GEOMETRY_MAX_VERTEX_COUNT + incEdge.indexes[1]
-            : incEdge.indexes[1];
+        collision->contacts[1].id = (!incEdgeFlipped)
+                                        ? PR_GEOMETRY_MAX_VERTEX_COUNT
+                                              + incEdge.indexes[1]
+                                        : incEdge.indexes[1];
 
         if (depth1 < 0.0f) {
             collision->contacts[0].point = incEdge.data[1];
@@ -577,11 +570,11 @@ static bool prComputeCollisionPolys(
 }
 
 /* Computes the intersection of a circle and a line. */
-static bool prComputeIntersectionCircleLine(
-    prVector2 center, float radius,
-    prVector2 origin, prVector2 direction,
-    float *lambda
-) {
+static bool prComputeIntersectionCircleLine(prVector2 center,
+                                            float radius,
+                                            prVector2 origin,
+                                            prVector2 direction,
+                                            float *lambda) {
     const prVector2 originToCenter = prVector2Subtract(center, origin);
 
     const float dot = prVector2Dot(originToCenter, direction);
@@ -595,11 +588,11 @@ static bool prComputeIntersectionCircleLine(
 }
 
 /* Computes the intersection of two lines. */
-static bool prComputeIntersectionLines(
-    prVector2 origin1, prVector2 direction1,
-    prVector2 origin2, prVector2 direction2,
-    float *lambda
-) {
+static bool prComputeIntersectionLines(prVector2 origin1,
+                                       prVector2 direction1,
+                                       prVector2 origin2,
+                                       prVector2 direction2,
+                                       float *lambda) {
     float rXs = prVector2Cross(direction1, direction2);
 
     prVector2 qp = prVector2Subtract(origin2, origin1);
@@ -647,30 +640,28 @@ static bool prComputeIntersectionLines(
 static prEdge prGetContactEdge(const prShape *s, prTransform tx, prVector2 v) {
     const prVertices *vertices = prGetPolygonVertices(s);
     int supportIndex = prGetSupportPointIndex(vertices, tx, v);
-    int prevIndex = (supportIndex == 0) ? vertices->count - 1 : supportIndex - 1;
-    int nextIndex = (supportIndex == vertices->count - 1) ? 0 : supportIndex + 1;
+    int prevIndex = (supportIndex == 0) ? vertices->count - 1
+                                        : supportIndex - 1;
+    int nextIndex = (supportIndex == vertices->count - 1) ? 0
+                                                          : supportIndex + 1;
     prVector2 prevEdgeVector = prVector2Normalize(
-        prVector2Subtract(vertices->data[supportIndex], vertices->data[prevIndex])
-    );
+        prVector2Subtract(vertices->data[supportIndex],
+                          vertices->data[prevIndex]));
     prVector2 nextEdgeVector = prVector2Normalize(
-        prVector2Subtract(vertices->data[supportIndex], vertices->data[nextIndex])
-    );
+        prVector2Subtract(vertices->data[supportIndex],
+                          vertices->data[nextIndex]));
     v = prVector2Rotate(v, -tx.angle);
     if (prVector2Dot(prevEdgeVector, v) < prVector2Dot(nextEdgeVector, v)) {
-        return (prEdge) { 
-            .data = {
-                prVector2Transform(vertices->data[prevIndex], tx),
-                prVector2Transform(vertices->data[supportIndex], tx)
-            },
+        return (prEdge) {
+            .data = { prVector2Transform(vertices->data[prevIndex], tx),
+                      prVector2Transform(vertices->data[supportIndex], tx) },
             .indexes = { prevIndex, supportIndex },
             .count = 2
         };
     } else {
         return (prEdge) {
-            .data = {
-                prVector2Transform(vertices->data[supportIndex], tx),
-                prVector2Transform(vertices->data[nextIndex], tx)
-            },
+            .data = { prVector2Transform(vertices->data[supportIndex], tx),
+                      prVector2Transform(vertices->data[nextIndex], tx) },
             .indexes = { supportIndex, nextIndex },
             .count = 2
         };
@@ -678,11 +669,11 @@ static prEdge prGetContactEdge(const prShape *s, prTransform tx, prVector2 v) {
 }
 
 /* Finds the axis of minimum penetration, then returns its index. */
-static int prGetSeparatingAxisIndex(
-    const prShape *s1, prTransform tx1, 
-    const prShape *s2, prTransform tx2,
-    float *depth
-) {
+static int prGetSeparatingAxisIndex(const prShape *s1,
+                                    prTransform tx1,
+                                    const prShape *s2,
+                                    prTransform tx2,
+                                    float *depth) {
     const prVertices *vertices1 = prGetPolygonVertices(s1);
     const prVertices *vertices2 = prGetPolygonVertices(s2);
     const prVertices *normals1 = prGetPolygonNormals(s1);
@@ -691,13 +682,17 @@ static int prGetSeparatingAxisIndex(
     for (int i = 0; i < normals1->count; i++) {
         prVector2 vertex = prVector2Transform(vertices1->data[i], tx1);
         prVector2 normal = prVector2RotateTx(normals1->data[i], tx1);
-        int supportIndex = prGetSupportPointIndex(vertices2, tx2, prVector2Negate(normal));
+        int supportIndex = prGetSupportPointIndex(vertices2,
+                                                  tx2,
+                                                  prVector2Negate(normal));
 
         if (supportIndex < 0) return supportIndex;
 
-        prVector2 supportPoint = prVector2Transform(vertices2->data[supportIndex], tx2);
+        prVector2 supportPoint =
+            prVector2Transform(vertices2->data[supportIndex], tx2);
 
-        float depth = prVector2Dot(normal, prVector2Subtract(supportPoint, vertex));
+        float depth = prVector2Dot(normal,
+                                   prVector2Subtract(supportPoint, vertex));
 
         if (maxDepth < depth) maxDepth = depth, maxIndex = i;
     }
@@ -708,19 +703,18 @@ static int prGetSeparatingAxisIndex(
 }
 
 /* Returns the index of the vertex farthest along `v`. */
-static int prGetSupportPointIndex(
-    const prVertices *vertices, 
-    prTransform tx, prVector2 v
-) {
+static int prGetSupportPointIndex(const prVertices *vertices,
+                                  prTransform tx,
+                                  prVector2 v) {
     float maxDot = -FLT_MAX;
-    
+
     int maxIndex = -1;
 
     v = prVector2Rotate(v, -tx.angle);
 
     for (int i = 0; i < vertices->count; i++) {
         float dot = prVector2Dot(vertices->data[i], v);
-        
+
         if (maxDot < dot) maxDot = dot, maxIndex = i;
     }
 

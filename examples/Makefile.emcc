@@ -11,7 +11,6 @@ SOURCE_PATH = src
 
 TARGETS = \
 	${SOURCE_PATH}/basic.html   \
-	${SOURCE_PATH}/bricks.html  \
 	${SOURCE_PATH}/raycast.html \
 	${SOURCE_PATH}/raylib.html  \
 	${SOURCE_PATH}/shoot.html

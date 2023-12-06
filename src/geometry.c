@@ -30,11 +30,11 @@
 
 /* A union that represents the internal data of a collision shape. */
 typedef union _prShapeData {
-    struct { 
-        float radius; 
+    struct {
+        float radius;
     } circle;
-    struct { 
-        prVertices vertices, normals; 
+    struct {
+        prVertices vertices, normals;
     } polygon;
 } prShapeData;
 
@@ -85,15 +85,13 @@ prShape *prCreateRectangle(prMaterial material, float width, float height) {
     const float halfWidth = 0.5f * width, halfHeight = 0.5f * height;
 
     // NOTE: https://en.cppreference.com/w/c/language/compound_literal
-    prSetPolygonVertices(result, &(const prVertices) {
-        .data = {
-            { .x = -halfWidth, .y = -halfHeight },
-            { .x = -halfWidth, .y =  halfHeight },
-            { .x = halfWidth,  .y =  halfHeight },
-            { .x = halfWidth,  .y = -halfHeight }
-        },
-        .count = 4
-    });
+    prSetPolygonVertices(result,
+                         &(const prVertices) {
+                             .data = { { .x = -halfWidth, .y = -halfHeight },
+                                       { .x = -halfWidth, .y = halfHeight },
+                                       { .x = halfWidth, .y = halfHeight },
+                                       { .x = halfWidth, .y = -halfHeight } },
+                             .count = 4 });
 
     return result;
 }
@@ -157,7 +155,8 @@ float prGetShapeInertia(const prShape *s) {
     if (s == NULL || s->material.density <= 0.0f) return 0.0f;
 
     if (s->type == PR_SHAPE_CIRCLE) {
-        return 0.5f * prGetShapeMass(s) * (s->data.circle.radius * s->data.circle.radius);
+        return 0.5f * prGetShapeMass(s)
+               * (s->data.circle.radius * s->data.circle.radius);
     } else if (s->type == PR_SHAPE_POLYGON) {
         float numerator = 0.0f, denominator = 0.0f;
 
@@ -168,8 +167,9 @@ float prGetShapeInertia(const prShape *s) {
             prVector2 v1 = s->data.polygon.vertices.data[j];
             prVector2 v2 = s->data.polygon.vertices.data[i];
 
-            const float cross = prVector2Cross(v1, v2), dotSum = (prVector2Dot(v1, v1)
-                + prVector2Dot(v1, v2) + prVector2Dot(v2, v2));
+            const float cross = prVector2Cross(v1, v2),
+                        dotSum = (prVector2Dot(v1, v1) + prVector2Dot(v1, v2)
+                                  + prVector2Dot(v2, v2));
 
             numerator += (cross * dotSum), denominator += cross;
         }
@@ -184,29 +184,30 @@ float prGetShapeInertia(const prShape *s) {
 prAABB prGetShapeAABB(const prShape *s, prTransform tx) {
     prAABB result = PR_API_STRUCT_ZERO(prAABB);
 
-     if (s != NULL) {
+    if (s != NULL) {
         if (s->type == PR_SHAPE_CIRCLE) {
             result.x = tx.position.x - s->data.circle.radius;
             result.y = tx.position.y - s->data.circle.radius;
-            
+
             result.width = result.height = 2.0f * s->data.circle.radius;
         } else if (s->type == PR_SHAPE_POLYGON) {
-            prVector2 minVertex = { .x = FLT_MAX,  .y = FLT_MAX };
+            prVector2 minVertex = { .x = FLT_MAX, .y = FLT_MAX };
             prVector2 maxVertex = { .x = -FLT_MAX, .y = -FLT_MAX };
-            
+
             for (int i = 0; i < s->data.polygon.vertices.count; i++) {
-                prVector2 v = prVector2Transform(s->data.polygon.vertices.data[i], tx);
-                
+                prVector2 v =
+                    prVector2Transform(s->data.polygon.vertices.data[i], tx);
+
                 if (minVertex.x > v.x) minVertex.x = v.x;
                 if (minVertex.y > v.y) minVertex.y = v.y;
-                    
+
                 if (maxVertex.x < v.x) maxVertex.x = v.x;
                 if (maxVertex.y < v.y) maxVertex.y = v.y;
             }
-            
+
             const float deltaX = maxVertex.x - minVertex.x;
             const float deltaY = maxVertex.y - minVertex.y;
-            
+
             result.x = minVertex.x;
             result.y = minVertex.y;
 
@@ -220,7 +221,8 @@ prAABB prGetShapeAABB(const prShape *s, prTransform tx) {
 
 /* Returns the radius of `s`, assuming `s` is a 'circle' collision shape. */
 float prGetCircleRadius(const prShape *s) {
-    return (prGetShapeType(s) == PR_SHAPE_CIRCLE) ? s->data.circle.radius : 0.0f;
+    return (prGetShapeType(s) == PR_SHAPE_CIRCLE) ? s->data.circle.radius
+                                                  : 0.0f;
 }
 
 /* 
@@ -228,8 +230,8 @@ float prGetCircleRadius(const prShape *s) {
     assuming `s` is a 'polygon' collision shape. 
 */
 prVector2 prGetPolygonVertex(const prShape *s, int index) {
-    if (prGetShapeType(s) != PR_SHAPE_POLYGON
-        || index < 0 || index >= s->data.polygon.vertices.count)
+    if (prGetShapeType(s) != PR_SHAPE_POLYGON || index < 0
+        || index >= s->data.polygon.vertices.count)
         return PR_API_STRUCT_ZERO(prVector2);
 
     return s->data.polygon.vertices.data[index];
@@ -237,9 +239,8 @@ prVector2 prGetPolygonVertex(const prShape *s, int index) {
 
 /* Returns the vertices of `s`, assuming `s` is a 'polygon' collision shape. */
 const prVertices *prGetPolygonVertices(const prShape *s) {
-    return (prGetShapeType(s) == PR_SHAPE_POLYGON)
-        ? &(s->data.polygon.vertices)
-        : NULL;
+    return (prGetShapeType(s) == PR_SHAPE_POLYGON) ? &(s->data.polygon.vertices)
+                                                   : NULL;
 }
 
 /* 
@@ -247,8 +248,8 @@ const prVertices *prGetPolygonVertices(const prShape *s) {
     assuming `s` is a 'polygon' collision shape. 
 */
 prVector2 prGetPolygonNormal(const prShape *s, int index) {
-    if (prGetShapeType(s) != PR_SHAPE_POLYGON
-        || index < 0 || index >= s->data.polygon.normals.count) 
+    if (prGetShapeType(s) != PR_SHAPE_POLYGON || index < 0
+        || index >= s->data.polygon.normals.count)
         return PR_API_STRUCT_ZERO(prVector2);
 
     return s->data.polygon.normals.data[index];
@@ -256,9 +257,8 @@ prVector2 prGetPolygonNormal(const prShape *s, int index) {
 
 /* Returns the normals of `s`, assuming `s` is a 'polygon' collision shape. */
 const prVertices *prGetPolygonNormals(const prShape *s) {
-    return (prGetShapeType(s) == PR_SHAPE_POLYGON) 
-        ? &(s->data.polygon.normals)
-        : NULL;
+    return (prGetShapeType(s) == PR_SHAPE_POLYGON) ? &(s->data.polygon.normals)
+                                                   : NULL;
 }
 
 /* Sets the type of `s` to `type`. */
@@ -288,8 +288,8 @@ void prSetShapeRestitution(prShape *s, float restitution) {
 
 /* Sets the `radius` of `s`, assuming `s` is a 'circle' collision shape. */
 void prSetCircleRadius(prShape *s, float radius) {
-    if (s == NULL || s->type != PR_SHAPE_CIRCLE) return; 
-    
+    if (s == NULL || s->type != PR_SHAPE_CIRCLE) return;
+
     s->data.circle.radius = radius;
 
     s->area = M_PI * (radius * radius);
@@ -302,15 +302,13 @@ void prSetRectangleDimensions(prShape *s, float width, float height) {
     const float halfWidth = 0.5f * width, halfHeight = 0.5f * height;
 
     // NOTE: https://en.cppreference.com/w/c/language/compound_literal
-    prSetPolygonVertices(s, &(const prVertices) {
-        .data = {
-            { .x = -halfWidth, .y = -halfHeight },
-            { .x = -halfWidth, .y =  halfHeight },
-            { .x =  halfWidth, .y =  halfHeight },
-            { .x =  halfWidth, .y = -halfHeight }
-        },
-        .count = 4
-    });
+    prSetPolygonVertices(s,
+                         &(const prVertices) {
+                             .data = { { .x = -halfWidth, .y = -halfHeight },
+                                       { .x = -halfWidth, .y = halfHeight },
+                                       { .x = halfWidth, .y = halfHeight },
+                                       { .x = halfWidth, .y = -halfHeight } },
+                             .count = 4 });
 }
 
 /* Sets the `vertices` of `s`, assuming `s` is a 'polygon' collision shape. */
@@ -328,13 +326,11 @@ void prSetPolygonVertices(prShape *s, const prVertices *vertices) {
         for (int i = 0; i < newVertices.count; i++)
             s->data.polygon.vertices.data[i] = newVertices.data[i];
 
-        for (int j = newVertices.count - 1, i = 0; i < newVertices.count; j = i, i++)
+        for (int j = newVertices.count - 1, i = 0; i < newVertices.count;
+             j = i, i++)
             s->data.polygon.normals.data[i] = prVector2LeftNormal(
-                prVector2Subtract(
-                    s->data.polygon.vertices.data[i], 
-                    s->data.polygon.vertices.data[j]
-                )
-            );
+                prVector2Subtract(s->data.polygon.vertices.data[i],
+                                  s->data.polygon.vertices.data[j]));
     }
 
     float twiceAreaSum = 0.0f;
@@ -346,15 +342,10 @@ void prSetPolygonVertices(prShape *s, const prVertices *vertices) {
         */
 
         const float twiceArea = prVector2Cross(
-            prVector2Subtract(
-                s->data.polygon.vertices.data[i], 
-                s->data.polygon.vertices.data[0]
-            ),
-            prVector2Subtract(
-                s->data.polygon.vertices.data[i + 1], 
-                s->data.polygon.vertices.data[0]
-            )
-        );
+            prVector2Subtract(s->data.polygon.vertices.data[i],
+                              s->data.polygon.vertices.data[0]),
+            prVector2Subtract(s->data.polygon.vertices.data[i + 1],
+                              s->data.polygon.vertices.data[0]));
 
         twiceAreaSum += twiceArea;
     }
@@ -376,11 +367,10 @@ static void prJarvisMarch(const prVertices *input, prVertices *output) {
         we do not need advanced convex hull algorithms like Graham scan, Quickhull, etc.
     */
 
-   int lowestIndex = 0;
+    int lowestIndex = 0;
 
     for (int i = 1; i < input->count; i++)
-        if (input->data[lowestIndex].x > input->data[i].x)
-            lowestIndex = i;
+        if (input->data[lowestIndex].x > input->data[i].x) lowestIndex = i;
 
     output->count = 0, output->data[output->count++] = input->data[lowestIndex];
 
@@ -398,19 +388,18 @@ static void prJarvisMarch(const prVertices *input, prVertices *output) {
         for (int i = 0; i < input->count; i++) {
             if (i == currentIndex || i == nextIndex) continue;
 
-            const int direction = prVector2CounterClockwise(
-                input->data[currentIndex], input->data[i], input->data[nextIndex]
-            );
+            const int direction =
+                prVector2CounterClockwise(input->data[currentIndex],
+                                          input->data[i],
+                                          input->data[nextIndex]);
 
             if (direction < 0) continue;
 
-            const float toCandidate = prVector2DistanceSqr(
-                input->data[currentIndex], input->data[i]
-            );
+            const float toCandidate =
+                prVector2DistanceSqr(input->data[currentIndex], input->data[i]);
 
-            const float toNext = prVector2DistanceSqr(
-                input->data[currentIndex], input->data[nextIndex]
-            );
+            const float toNext = prVector2DistanceSqr(input->data[currentIndex],
+                                                      input->data[nextIndex]);
 
             if (direction != 0 || (direction == 0 && (toCandidate > toNext)))
                 nextIndex = i;
@@ -421,5 +410,5 @@ static void prJarvisMarch(const prVertices *input, prVertices *output) {
         currentIndex = nextIndex;
 
         output->data[output->count++] = input->data[nextIndex];
-    }       
+    }
 }

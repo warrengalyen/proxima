@@ -115,15 +115,16 @@ void prReleaseWorld(prWorld *w) {
 /* Erases all rigid bodies from `w`. */
 void prClearWorld(prWorld *w) {
     if (w == NULL) return;
-    
+
     prClearSpatialHash(w->hash);
-    
+
     arrsetlen(w->bodies, 0);
 }
 
 /* Adds a rigid body to `w`. */
 bool prAddBodyToWorld(prWorld *w, prBody *b) {
-    if (w == NULL || b == NULL || arrlen(w->bodies) >= PR_WORLD_MAX_OBJECT_COUNT)
+    if (w == NULL || b == NULL
+        || arrlen(w->bodies) >= PR_WORLD_MAX_OBJECT_COUNT)
         return false;
 
     arrput(w->bodies, b);
@@ -143,7 +144,7 @@ bool prRemoveBodyFromWorld(prWorld *w, prBody *b) {
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -191,28 +192,24 @@ void prStepWorld(prWorld *w, float dt) {
     }
 
     for (int i = 0; i < hmlen(w->cache); i++)
-        prApplyAccumulatedImpulses(
-            w->cache[i].key.first,
-            w->cache[i].key.second,
-            &w->cache[i].value
-        );
+        prApplyAccumulatedImpulses(w->cache[i].key.first,
+                                   w->cache[i].key.second,
+                                   &w->cache[i].value);
 
     const float inverseDt = 1.0f / dt;
 
     for (int i = 0; i < PR_WORLD_ITERATION_COUNT; i++)
         for (int j = 0; j < hmlen(w->cache); j++)
-            prResolveCollision(
-                w->cache[j].key.first,
-                w->cache[j].key.second,
-                &w->cache[j].value,
-                inverseDt
-            );
+            prResolveCollision(w->cache[j].key.first,
+                               w->cache[j].key.second,
+                               &w->cache[j].value,
+                               inverseDt);
 
     for (int i = 0; i < arrlen(w->bodies); i++)
         prIntegrateForBodyPosition(w->bodies[i], dt);
 
     for (int i = 0; i < hmlen(w->cache); i++)
-        if (w->handler.postStep != NULL) 
+        if (w->handler.postStep != NULL)
             w->handler.postStep(w->cache[i].key, &w->cache[i].value);
 
     prPostStepWorld(w);
@@ -230,7 +227,7 @@ void prUpdateWorld(prWorld *w, float dt) {
 
     w->timestamp = currentTime, w->accumulator += elapsedTime;
 
-    for (; w->accumulator >= dt; w->accumulator -= dt) 
+    for (; w->accumulator >= dt; w->accumulator -= dt)
         prStepWorld(w, dt);
 }
 
@@ -246,27 +243,20 @@ void prComputeRaycastForWorld(prWorld *w, prRay ray, prRaycastQueryFunc func) {
     for (int i = 0; i < arrlen(w->bodies); i++)
         prInsertToSpatialHash(w->hash, prGetBodyAABB(w->bodies[i]), i);
 
-    prVector2 minVertex = ray.origin, maxVertex = prVector2Add(
-        ray.origin, 
-        prVector2ScalarMultiply(
-            prVector2Normalize(ray.direction), 
-            ray.maxDistance
-        )
-    );
+    prVector2 minVertex = ray.origin,
+              maxVertex = prVector2Add(
+                  ray.origin,
+                  prVector2ScalarMultiply(prVector2Normalize(ray.direction),
+                                          ray.maxDistance));
 
-     prQuerySpatialHash(
-        w->hash,
-        (prAABB) {
-            .x = fminf(minVertex.x, maxVertex.x),
-            .y = fminf(minVertex.y, maxVertex.y),
-            .width = fabsf(maxVertex.x - minVertex.x),
-            .height = fabsf(maxVertex.y - minVertex.y)
-        },
-        prRaycastHashQueryCallback,
-        &(prRaycastHashQueryCtx) {
-            .ray = ray, .world = w, .func = func
-        }
-    );
+    prQuerySpatialHash(w->hash,
+                       (prAABB) { .x = fminf(minVertex.x, maxVertex.x),
+                                  .y = fminf(minVertex.y, maxVertex.y),
+                                  .width = fabsf(maxVertex.x - minVertex.x),
+                                  .height = fabsf(maxVertex.y - minVertex.y) },
+                       prRaycastHashQueryCallback,
+                       &(prRaycastHashQueryCtx) {
+                           .ray = ray, .world = w, .func = func });
 }
 
 /* Private Functions ==================================================================== */
@@ -283,7 +273,8 @@ static bool prPreStepHashQueryCallback(int otherBodyIndex, void *ctx) {
     prBody *b1 = queryCtx->world->bodies[queryCtx->bodyIndex];
     prBody *b2 = queryCtx->world->bodies[otherBodyIndex];
 
-    if (prGetBodyInverseMass(b1) + prGetBodyInverseMass(b2) <= 0.0f) return false;
+    if (prGetBodyInverseMass(b1) + prGetBodyInverseMass(b2) <= 0.0f)
+        return false;
 
     const prBodyPair key = { .first = b1, .second = b2 };
 
@@ -319,30 +310,31 @@ static bool prPreStepHashQueryCallback(int otherBodyIndex, void *ctx) {
             }
 
             if (k >= 0) {
-                const float accNormalScalar = entry->value.contacts[k].cache.normalScalar;
-                const float accTangentScalar = entry->value.contacts[k].cache.tangentScalar;
+                const float accNormalScalar = entry->value.contacts[k]
+                                                  .cache.normalScalar;
+                const float accTangentScalar = entry->value.contacts[k]
+                                                   .cache.tangentScalar;
 
-            collision.contacts[i].cache.normalScalar = accNormalScalar;
-            collision.contacts[i].cache.tangentScalar = accTangentScalar;
+                collision.contacts[i].cache.normalScalar = accNormalScalar;
+                collision.contacts[i].cache.tangentScalar = accTangentScalar;
             } else {
                 collision.contacts[i].cache.normalScalar = 0.0f;
                 collision.contacts[i].cache.tangentScalar = 0.0f;
             }
         }
     } else {
-        collision.friction = 0.5f * (prGetShapeFriction(s1) + prGetShapeFriction(s2));
-        collision.restitution = fminf(prGetShapeRestitution(s1), prGetShapeRestitution(s2));
+        collision.friction = 0.5f
+                             * (prGetShapeFriction(s1)
+                                + prGetShapeFriction(s2));
+        collision.restitution = fminf(prGetShapeRestitution(s1),
+                                      prGetShapeRestitution(s2));
 
         if (collision.friction <= 0.0f) collision.friction = 0.0f;
         if (collision.restitution <= 0.0f) collision.restitution = 0.0f;
     }
 
-    hmputs(
-        queryCtx->world->cache,
-        ((prContactCacheEntry) {
-            .key = key, .value = collision 
-        })
-    );
+    hmputs(queryCtx->world->cache,
+           ((prContactCacheEntry) { .key = key, .value = collision }));
 
     return true;
 }
@@ -356,11 +348,10 @@ static bool prRaycastHashQueryCallback(int bodyIndex, void *ctx) {
 
     prRaycastHit raycastHit = { .distance = 0.0f };
 
-    if (!prComputeRaycast(
-        queryCtx->world->bodies[bodyIndex],
-        queryCtx->ray,
-        &raycastHit
-    )) return false;
+    if (!prComputeRaycast(queryCtx->world->bodies[bodyIndex],
+                          queryCtx->ray,
+                          &raycastHit))
+        return false;
 
     queryCtx->func(raycastHit);
 
@@ -373,14 +364,11 @@ static void prPreStepWorld(prWorld *w) {
         prInsertToSpatialHash(w->hash, prGetBodyAABB(w->bodies[i]), i);
 
     for (int i = 0; i < arrlen(w->bodies); i++)
-        prQuerySpatialHash(
-            w->hash, 
-            prGetBodyAABB(w->bodies[i]), 
-            prPreStepHashQueryCallback, 
-            &(prPreStepHashQueryCtx) {
-                .world = w, .bodyIndex = i
-            }
-        );
+        prQuerySpatialHash(w->hash,
+                           prGetBodyAABB(w->bodies[i]),
+                           prPreStepHashQueryCallback,
+                           &(prPreStepHashQueryCtx) { .world = w,
+                                                      .bodyIndex = i });
 }
 
 /* 

@@ -34,13 +34,13 @@
 
 /* Macros =============================================================================== */
 
-#define TARGET_FPS             60
+#define TARGET_FPS 60
 
-#define SCREEN_WIDTH           1280
-#define SCREEN_HEIGHT          800
+#define SCREEN_WIDTH  1280
+#define SCREEN_HEIGHT 800
 
-#define LOGO_WIDTH_IN_PIECES   40
-#define LOGO_HEIGHT_IN_PIECES  40
+#define LOGO_WIDTH_IN_PIECES  40
+#define LOGO_HEIGHT_IN_PIECES 40
 
 /* Typedefs ============================================================================= */
 
@@ -53,10 +53,8 @@ typedef struct _Piece {
 
 static const float CELL_SIZE = 2.8f, DELTA_TIME = 1.0f / TARGET_FPS;
 
-static const Rectangle SCREEN_BOUNDS = { 
-    .width = SCREEN_WIDTH, 
-    .height = SCREEN_HEIGHT 
-};
+static const Rectangle SCREEN_BOUNDS = { .width = SCREEN_WIDTH,
+                                         .height = SCREEN_HEIGHT };
 
 /* Private Variables ==================================================================== */
 
@@ -81,7 +79,9 @@ static void DeinitExample(void);
 int main(void) {
     SetConfigFlags(FLAG_MSAA_4X_HINT);
 
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "mechanika-design/proxima | raylib.c");
+    InitWindow(SCREEN_WIDTH,
+               SCREEN_HEIGHT,
+               "mechanika-design/proxima | raylib.c");
 
     InitExample();
 
@@ -90,7 +90,7 @@ int main(void) {
 #else
     // SetTargetFPS(TARGET_FPS);
 
-    while (!WindowShouldClose()) 
+    while (!WindowShouldClose())
         UpdateExample();
 #endif
 
@@ -112,17 +112,14 @@ static void InitExample(void) {
         pieceWidth = raylibTexture.width / LOGO_WIDTH_IN_PIECES;
         pieceHeight = raylibTexture.height / LOGO_HEIGHT_IN_PIECES;
 
-        halfPieceWidth = 0.5f * pieceWidth, halfPieceHeight = 0.5f * pieceHeight;
+        halfPieceWidth = 0.5f * pieceWidth,
+        halfPieceHeight = 0.5f * pieceHeight;
 
         prShape *pieceShape = prCreateRectangle(
             (prMaterial) {
-                .density = 1.25f,
-                .friction = 0.5f,
-                .restitution = 0.0f
-            },
+                .density = 1.25f, .friction = 0.5f, .restitution = 0.0f },
             prPixelsToUnits(pieceWidth),
-            prPixelsToUnits(pieceHeight)
-        );
+            prPixelsToUnits(pieceHeight));
 
         const prVector2 origin = {
             0.5f * (SCREEN_WIDTH - raylibTexture.width),
@@ -138,11 +135,10 @@ static void InitExample(void) {
                 (origin.y + pieces[i].offset.y) + halfPieceHeight
             };
 
-            pieces[i].body = prCreateBodyFromShape(
-                PR_BODY_DYNAMIC,
-                prVector2PixelsToUnits(position),
-                pieceShape
-            );
+            pieces[i].body = prCreateBodyFromShape(PR_BODY_DYNAMIC,
+                                                   prVector2PixelsToUnits(
+                                                       position),
+                                                   pieceShape);
 
             prAddBodyToWorld(world, pieces[i].body);
         }
@@ -150,28 +146,13 @@ static void InitExample(void) {
         ball = prCreateBodyFromShape(
             PR_BODY_DYNAMIC,
             prVector2PixelsToUnits(
-                (prVector2) {
-                    .x = -SCREEN_WIDTH,
-                    .y = 0.5f * SCREEN_HEIGHT
-                }
-            ),
-            prCreateCircle(
-                (prMaterial) {
-                    .density = 1.85f,
-                    .friction = 0.75f
-                }, 
-                prPixelsToUnits(20.0f)
-            )
-        );
+                (prVector2) { .x = -SCREEN_WIDTH, .y = 0.5f * SCREEN_HEIGHT }),
+            prCreateCircle((prMaterial) { .density = 1.85f, .friction = 0.75f },
+                           prPixelsToUnits(20.0f)));
 
-        prApplyImpulseToBody(
-            ball,
-            PR_API_STRUCT_ZERO(prVector2),
-            (prVector2) {
-                .x = 2048.0f,
-                .y = 0.0f
-            }
-        );
+        prApplyImpulseToBody(ball,
+                             PR_API_STRUCT_ZERO(prVector2),
+                             (prVector2) { .x = 2048.0f, .y = 0.0f });
 
         prAddBodyToWorld(world, ball);
     }
@@ -182,72 +163,60 @@ static void UpdateExample(void) {
         prAABB aabb = prGetBodyAABB(pieces[i].body);
 
         if (CheckCollisionRecs(
-            (Rectangle) {
-                .x = prUnitsToPixels(aabb.x),
-                .y = prUnitsToPixels(aabb.y),
-                .width = prUnitsToPixels(aabb.width), 
-                .height = prUnitsToPixels(aabb.height)
-            },
-            SCREEN_BOUNDS
-        )) continue;
+                (Rectangle) { .x = prUnitsToPixels(aabb.x),
+                              .y = prUnitsToPixels(aabb.y),
+                              .width = prUnitsToPixels(aabb.width),
+                              .height = prUnitsToPixels(aabb.height) },
+                SCREEN_BOUNDS))
+            continue;
 
-        if (prRemoveBodyFromWorld(world, pieces[i].body))
-            pieces[i].body = NULL;
+        if (prRemoveBodyFromWorld(world, pieces[i].body)) pieces[i].body = NULL;
     }
 
     prUpdateWorld(world, DELTA_TIME);
 
     {
         BeginDrawing();
-            
+
         ClearBackground(PR_DRAW_COLOR_MATTEBLACK);
 
-        prDrawGrid(SCREEN_BOUNDS, CELL_SIZE, 0.25f, ColorAlpha(DARKGRAY, 0.75f));
+        prDrawGrid(SCREEN_BOUNDS,
+                   CELL_SIZE,
+                   0.25f,
+                   ColorAlpha(DARKGRAY, 0.75f));
 
         for (int i = 0; i < LOGO_WIDTH_IN_PIECES * LOGO_HEIGHT_IN_PIECES; i++) {
             if (pieces[i].body == NULL) continue;
 
             const prVector2 bodyPosition = prGetBodyPosition(pieces[i].body);
 
-            DrawTexturePro(
-                raylibTexture,
-                (Rectangle) {
-                    .x = pieces[i].offset.x,
-                    .y = pieces[i].offset.y,
-                    .width = pieceWidth,
-                    .height = pieceHeight
-                },
-                (Rectangle) {
-                    .x = prUnitsToPixels(bodyPosition.x), 
-                    .y = prUnitsToPixels(bodyPosition.y),
-                    .width = pieceWidth,
-                    .height = pieceHeight
-                },
-                (Vector2) {
-                    .x = halfPieceWidth,
-                    .y = halfPieceHeight
-                },
-                RAD2DEG * prGetBodyAngle(pieces[i].body),
-                WHITE
-            );
+            DrawTexturePro(raylibTexture,
+                           (Rectangle) { .x = pieces[i].offset.x,
+                                         .y = pieces[i].offset.y,
+                                         .width = pieceWidth,
+                                         .height = pieceHeight },
+                           (Rectangle) { .x = prUnitsToPixels(bodyPosition.x),
+                                         .y = prUnitsToPixels(bodyPosition.y),
+                                         .width = pieceWidth,
+                                         .height = pieceHeight },
+                           (Vector2) { .x = halfPieceWidth,
+                                       .y = halfPieceHeight },
+                           RAD2DEG * prGetBodyAngle(pieces[i].body),
+                           WHITE);
         }
 
         prDrawBodyLines(ball, 1.0f, WHITE);
 
         const Font font = GetFontDefault();
 
-        DrawTextEx(
-            font,
-            TextFormat(
-                "%d/%d bodies", 
-                prGetBodyCountForWorld(world),
-                PR_WORLD_MAX_OBJECT_COUNT
-            ),
-            (Vector2) { .x = 8.0f, .y = 32.0f },
-            font.baseSize,
-            2.0f,
-            WHITE
-        );
+        DrawTextEx(font,
+                   TextFormat("%d/%d bodies",
+                              prGetBodyCountForWorld(world),
+                              PR_WORLD_MAX_OBJECT_COUNT),
+                   (Vector2) { .x = 8.0f, .y = 32.0f },
+                   font.baseSize,
+                   2.0f,
+                   WHITE);
 
         DrawFPS(8, 8);
 
