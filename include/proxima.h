@@ -56,7 +56,7 @@ extern "C" {
 #define PR_WORLD_DEFAULT_GRAVITY      ((prVector2) { .y = 9.8f })
 
 /* Defines the iteration count for the constraint solver. */
-#define PR_WORLD_ITERATION_COUNT      12
+#define PR_WORLD_ITERATION_COUNT      10
 
 /* Defines the maximum number of objects in a world. */
 #define PR_WORLD_MAX_OBJECT_COUNT     4096
