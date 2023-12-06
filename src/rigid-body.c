@@ -157,6 +157,11 @@ prVector2 prGetBodyVelocity(const prBody *b) {
     return (b != NULL) ? b->mtn.velocity : PR_API_STRUCT_ZERO(prVector2);
 }
 
+/* Returns the angular velocity of `b`. */
+float prGetBodyAngularVelocity(const prBody *b) {
+    return (b != NULL) ? b->mtn.angularVelocity : 0.0f;
+}
+
 /* Returns the AABB (Axis-Aligned Bounding Box) of `b`. */
 prAABB prGetBodyAABB(const prBody *b) {
     return (b != NULL && b->shape != NULL) ? b->aabb

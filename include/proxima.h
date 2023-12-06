@@ -392,6 +392,9 @@ float prGetBodyGravityScale(const prBody *b);
 /* Returns the velocity of `b`. */
 prVector2 prGetBodyVelocity(const prBody *b);
 
+/* Returns the angular velocity of `b`. */
+float prGetBodyAngularVelocity(const prBody *b);
+
 /* Returns the AABB (Axis-Aligned Bounding Box) of `b`. */
 prAABB prGetBodyAABB(const prBody *b);
 
