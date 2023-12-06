@@ -108,7 +108,7 @@ static void InitExample(void) {
 
     raylibTexture = LoadTexture("../res/images/raylib-40.png");
 
-    if (IsTextureReady(raylibTexture)) {
+    if (raylibTexture.id > 0) {
         pieceWidth = raylibTexture.width / LOGO_WIDTH_IN_PIECES;
         pieceHeight = raylibTexture.height / LOGO_HEIGHT_IN_PIECES;
 
@@ -116,7 +116,7 @@ static void InitExample(void) {
 
         prShape *pieceShape = prCreateRectangle(
             (prMaterial) {
-                .density = 1.75f,
+                .density = 1.25f,
                 .friction = 0.5f,
                 .restitution = 0.0f
             },

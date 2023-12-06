@@ -132,6 +132,91 @@ bool prComputeCollision(
     else return false;
 }
 
+bool prComputeRaycast(const prBody *b, prRay ray, prRaycastHit *raycastHit) {
+    if (b == NULL) return false;
+    ray.direction = prVector2Normalize(ray.direction);
+
+    const prShape *s = prGetBodyShape(b);
+    prTransform tx = prGetBodyTransform(b);
+
+    prShapeType type = prGetShapeType(s);
+
+    float lambda = FLT_MAX;
+
+    if (type == PR_SHAPE_CIRCLE) {
+        bool intersects = prComputeIntersectionCircleLine(
+            tx.position, prGetCircleRadius(s),
+            ray.origin, ray.direction,
+            &lambda
+        );
+
+        bool result = (lambda >= 0.0f) && (lambda <= ray.maxDistance);
+
+        if (raycastHit != NULL) {
+            raycastHit->body = (prBody *) b;
+
+            raycastHit->point = prVector2Add(
+                ray.origin, 
+                prVector2ScalarMultiply(ray.direction, lambda)
+            );
+
+            raycastHit->normal = prVector2LeftNormal(
+                prVector2Subtract(ray.origin, raycastHit->point)
+            );
+            raycastHit->distance = lambda;
+            raycastHit->inside = (lambda < 0.0f);
+        }
+
+        return result;
+    } else if (type == PR_SHAPE_POLYGON) {
+        const prVertices *vertices = prGetPolygonVertices(s);
+
+        int intersectionCount = 0;
+
+        float minLambda = FLT_MAX;
+
+        for (int j = vertices->count - 1, i = 0; i < vertices->count; j = i, i++) {
+            prVector2 v1 = prVector2Transform(vertices->data[i], tx);
+            prVector2 v2 = prVector2Transform(vertices->data[j], tx);
+
+            prVector2 edgeVector = prVector2Subtract(v1, v2);
+            
+            bool intersects = prComputeIntersectionLines(
+                ray.origin, ray.direction, 
+                v2, edgeVector, 
+                &lambda
+            );
+            
+            if (intersects && lambda <= ray.maxDistance) {
+                if (minLambda > lambda) {
+                    minLambda = lambda;
+
+                    if (raycastHit != NULL) {
+                        raycastHit->point = prVector2Add(
+                            ray.origin, 
+                            prVector2ScalarMultiply(
+                                ray.direction, 
+                                minLambda
+                            )
+                        );
+
+                        raycastHit->normal = prVector2LeftNormal(edgeVector);
+                    }
+                }
+                
+                intersectionCount++;
+            }
+        }
+
+        if (raycastHit != NULL) {
+            raycastHit->body = (prBody *) b;
+            raycastHit->inside = (intersectionCount & 1);
+        }
+        return (!(raycastHit->inside) && (intersectionCount > 0));
+    } else {
+        return false;
+    }
+}
 /* Private Functions ==================================================================== */
 
 /* 
@@ -491,191 +576,6 @@ static bool prComputeCollisionPolys(
     return true;
 }
 
-/* Returns the edge of `s` that is most perpendicular to `v`. */
-static prEdge prGetContactEdge(const prShape *s, prTransform tx, prVector2 v) {
-    const prVertices *vertices = prGetPolygonVertices(s);
-
-    int supportIndex = prGetSupportPointIndex(vertices, tx, v);
-
-    int prevIndex = (supportIndex == 0) ? vertices->count - 1 : supportIndex - 1;
-    int nextIndex = (supportIndex == vertices->count - 1) ? 0 : supportIndex + 1;
-
-    prVector2 prevEdgeVector = prVector2Normalize(
-        prVector2Subtract(vertices->data[supportIndex], vertices->data[prevIndex])
-    );
-
-    prVector2 nextEdgeVector = prVector2Normalize(
-        prVector2Subtract(vertices->data[supportIndex], vertices->data[nextIndex])
-    );
-
-    v = prVector2Rotate(v, -tx.angle);
-
-    if (prVector2Dot(prevEdgeVector, v) < prVector2Dot(nextEdgeVector, v)) {
-        return (prEdge) { 
-            .data = {
-                prVector2Transform(vertices->data[prevIndex], tx),
-                prVector2Transform(vertices->data[supportIndex], tx)
-            },
-            .indexes = { prevIndex, supportIndex },
-            .count = 2
-        };
-    } else {
-        return (prEdge) {
-            .data = {
-                prVector2Transform(vertices->data[supportIndex], tx),
-                prVector2Transform(vertices->data[nextIndex], tx)
-            },
-            .indexes = { supportIndex, nextIndex },
-            .count = 2
-        };
-    }
-}
-
-/* Finds the axis of minimum penetration, then returns its index. */
-static int prGetSeparatingAxisIndex(
-    const prShape *s1, prTransform tx1, 
-    const prShape *s2, prTransform tx2,
-    float *depth
-) {
-    const prVertices *vertices1 = prGetPolygonVertices(s1);
-    const prVertices *vertices2 = prGetPolygonVertices(s2);
-
-    const prVertices *normals1 = prGetPolygonNormals(s1);
-
-    float maxDepth = -FLT_MAX;
-
-    int maxIndex = -1;
-
-    for (int i = 0; i < normals1->count; i++) {
-        prVector2 vertex = prVector2Transform(vertices1->data[i], tx1);
-        prVector2 normal = prVector2RotateTx(normals1->data[i], tx1);
-
-        int supportIndex = prGetSupportPointIndex(vertices2, tx2, prVector2Negate(normal));
-
-        if (supportIndex < 0) return supportIndex;
-
-        prVector2 supportPoint = prVector2Transform(vertices2->data[supportIndex], tx2);
-
-        float depth = prVector2Dot(normal, prVector2Subtract(supportPoint, vertex));
-
-        if (maxDepth < depth) maxDepth = depth, maxIndex = i;
-    }
-
-    if (depth != NULL) *depth = maxDepth;
-
-    return maxIndex;
-}
-
-/* Returns the index of the vertex farthest along `v`. */
-static int prGetSupportPointIndex(
-    const prVertices *vertices, 
-    prTransform tx, prVector2 v
-) {
-    float maxDot = -FLT_MAX;
-    
-    int maxIndex = -1;
-
-    v = prVector2Rotate(v, -tx.angle);
-
-    for (int i = 0; i < vertices->count; i++) {
-        float dot = prVector2Dot(vertices->data[i], v);
-        
-        if (maxDot < dot) maxDot = dot, maxIndex = i;
-    }
-
-    return maxIndex;
-}
-
-/* Casta a `ray` against `b`. */
-bool prComputeRaycast(const prBody *b, prRay ray, prRaycastHit *raycastHit) {
-    if (b == NULL) return false;
-
-    ray.direction = prVector2Normalize(ray.direction);
-
-    const prShape *s = prGetBodyShape(b);
-    prTransform tx = prGetBodyTransform(b);
-
-    prShapeType type = prGetShapeType(s);
-
-    float lambda = FLT_MAX;
-
-    if (type == PR_SHAPE_CIRCLE) {
-        bool intersects = prComputeIntersectionCircleLine(
-            tx.position, prGetCircleRadius(s),
-            ray.origin, ray.direction,
-            &lambda
-        );
-
-        bool result = (lambda >= 0.0f) && (lambda <= ray.maxDistance);
-
-        if (raycastHit != NULL) {
-            raycastHit->body = (prBody *) b;
-
-            raycastHit->point = prVector2Add(
-                ray.origin, 
-                prVector2ScalarMultiply(ray.direction, lambda)
-            );
-
-            raycastHit->normal = prVector2LeftNormal(
-                prVector2Subtract(ray.origin, raycastHit->point)
-            );
-
-            raycastHit->distance = lambda;
-            raycastHit->inside = (lambda < 0.0f);
-        }
-
-        return result;
-    } else if (type == PR_SHAPE_POLYGON) {
-        const prVertices *vertices = prGetPolygonVertices(s);
-
-        int intersectionCount = 0;
-
-        float minLambda = FLT_MAX;
-
-        for (int j = vertices->count - 1, i = 0; i < vertices->count; j = i, i++) {
-            prVector2 v1 = prVector2Transform(vertices->data[i], tx);
-            prVector2 v2 = prVector2Transform(vertices->data[j], tx);
-
-            prVector2 edgeVector = prVector2Subtract(v1, v2);
-
-            bool intersects = prComputeIntersectionLines(
-                ray.origin, ray.direction, 
-                v2, edgeVector, 
-                &lambda
-            );
-
-            if (intersects && lambda <= ray.maxDistance) {
-                if (minLambda > lambda) {
-                    minLambda = lambda;
-
-                    if (raycastHit != NULL) {
-                        raycastHit->point = prVector2Add(
-                            ray.origin, 
-                            prVector2ScalarMultiply(
-                                ray.direction, 
-                                minLambda
-                            )
-                        );
-
-                        raycastHit->normal = prVector2LeftNormal(edgeVector);
-                    }
-                }
-
-                intersectionCount++;
-            }
-        }
-
-        if (raycastHit != NULL) {
-            raycastHit->body = (prBody *) b;
-            raycastHit->inside = (intersectionCount & 1);
-        }
-
-        return (!(raycastHit->inside) && (intersectionCount > 0));
-    } else {
-        return false;
-    }
-}
-
 /* Computes the intersection of a circle and a line. */
 static bool prComputeIntersectionCircleLine(
     prVector2 center, float radius,
@@ -741,4 +641,88 @@ static bool prComputeIntersectionLines(
 
         return (t1 >= 0.0f && t0 <= 1.0f);
     }
+}
+
+/* Returns the edge of `s` that is most perpendicular to `v`. */
+static prEdge prGetContactEdge(const prShape *s, prTransform tx, prVector2 v) {
+    const prVertices *vertices = prGetPolygonVertices(s);
+    int supportIndex = prGetSupportPointIndex(vertices, tx, v);
+    int prevIndex = (supportIndex == 0) ? vertices->count - 1 : supportIndex - 1;
+    int nextIndex = (supportIndex == vertices->count - 1) ? 0 : supportIndex + 1;
+    prVector2 prevEdgeVector = prVector2Normalize(
+        prVector2Subtract(vertices->data[supportIndex], vertices->data[prevIndex])
+    );
+    prVector2 nextEdgeVector = prVector2Normalize(
+        prVector2Subtract(vertices->data[supportIndex], vertices->data[nextIndex])
+    );
+    v = prVector2Rotate(v, -tx.angle);
+    if (prVector2Dot(prevEdgeVector, v) < prVector2Dot(nextEdgeVector, v)) {
+        return (prEdge) { 
+            .data = {
+                prVector2Transform(vertices->data[prevIndex], tx),
+                prVector2Transform(vertices->data[supportIndex], tx)
+            },
+            .indexes = { prevIndex, supportIndex },
+            .count = 2
+        };
+    } else {
+        return (prEdge) {
+            .data = {
+                prVector2Transform(vertices->data[supportIndex], tx),
+                prVector2Transform(vertices->data[nextIndex], tx)
+            },
+            .indexes = { supportIndex, nextIndex },
+            .count = 2
+        };
+    }
+}
+
+/* Finds the axis of minimum penetration, then returns its index. */
+static int prGetSeparatingAxisIndex(
+    const prShape *s1, prTransform tx1, 
+    const prShape *s2, prTransform tx2,
+    float *depth
+) {
+    const prVertices *vertices1 = prGetPolygonVertices(s1);
+    const prVertices *vertices2 = prGetPolygonVertices(s2);
+    const prVertices *normals1 = prGetPolygonNormals(s1);
+    float maxDepth = -FLT_MAX;
+    int maxIndex = -1;
+    for (int i = 0; i < normals1->count; i++) {
+        prVector2 vertex = prVector2Transform(vertices1->data[i], tx1);
+        prVector2 normal = prVector2RotateTx(normals1->data[i], tx1);
+        int supportIndex = prGetSupportPointIndex(vertices2, tx2, prVector2Negate(normal));
+
+        if (supportIndex < 0) return supportIndex;
+
+        prVector2 supportPoint = prVector2Transform(vertices2->data[supportIndex], tx2);
+
+        float depth = prVector2Dot(normal, prVector2Subtract(supportPoint, vertex));
+
+        if (maxDepth < depth) maxDepth = depth, maxIndex = i;
+    }
+
+    if (depth != NULL) *depth = maxDepth;
+
+    return maxIndex;
+}
+
+/* Returns the index of the vertex farthest along `v`. */
+static int prGetSupportPointIndex(
+    const prVertices *vertices, 
+    prTransform tx, prVector2 v
+) {
+    float maxDot = -FLT_MAX;
+    
+    int maxIndex = -1;
+
+    v = prVector2Rotate(v, -tx.angle);
+
+    for (int i = 0; i < vertices->count; i++) {
+        float dot = prVector2Dot(vertices->data[i], v);
+        
+        if (maxDot < dot) maxDot = dot, maxIndex = i;
+    }
+
+    return maxIndex;
 }

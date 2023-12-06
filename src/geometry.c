@@ -218,6 +218,7 @@ prAABB prGetShapeAABB(const prShape *s, prTransform tx) {
     return result;
 }
 
+/* Returns the radius of `s`, assuming `s` is a 'circle' collision shape. */
 float prGetCircleRadius(const prShape *s) {
     return (prGetShapeType(s) == PR_SHAPE_CIRCLE) ? s->data.circle.radius : 0.0f;
 }
@@ -404,7 +405,7 @@ static void prJarvisMarch(const prVertices *input, prVertices *output) {
             if (direction < 0) continue;
 
             const float toCandidate = prVector2DistanceSqr(
-                input->data[currentIndex], input->data[nextIndex]
+                input->data[currentIndex], input->data[i]
             );
 
             const float toNext = prVector2DistanceSqr(

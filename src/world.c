@@ -318,13 +318,16 @@ static bool prPreStepHashQueryCallback(int otherBodyIndex, void *ctx) {
                 }
             }
 
-            if (k < 0) continue;
-
-            const float accNormalScalar = entry->value.contacts[k].cache.normalScalar;
-            const float accTangentScalar = entry->value.contacts[k].cache.tangentScalar;
+            if (k >= 0) {
+                const float accNormalScalar = entry->value.contacts[k].cache.normalScalar;
+                const float accTangentScalar = entry->value.contacts[k].cache.tangentScalar;
 
             collision.contacts[i].cache.normalScalar = accNormalScalar;
             collision.contacts[i].cache.tangentScalar = accTangentScalar;
+            } else {
+                collision.contacts[i].cache.normalScalar = 0.0f;
+                collision.contacts[i].cache.tangentScalar = 0.0f;
+            }
         }
     } else {
         collision.friction = 0.5f * (prGetShapeFriction(s1) + prGetShapeFriction(s2));
