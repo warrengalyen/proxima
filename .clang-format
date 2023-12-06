@@ -3,30 +3,31 @@
 ---
 IndentPPDirectives: BeforeHash
 
-# Code alignment settings
 BasedOnStyle: LLVM
-AlignAfterOpenBracket: DontAlign
-AlignConsecutiveMacros: true
+AlignAfterOpenBracket: Align
+AlignConsecutiveMacros: 'true'
 AlignEscapedNewlines: Left
 AlignOperands: 'true'
 AlignTrailingComments: 'true'
 AllowAllConstructorInitializersOnNextLine: 'true'
-AllowAllParametersOfDeclarationOnNextLine: 'false'
+AllowAllParametersOfDeclarationOnNextLine: 'true'
 AllowShortBlocksOnASingleLine: 'true'
 AllowShortCaseLabelsOnASingleLine: 'false'
 AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Always
 AllowShortLambdasOnASingleLine: Inline
-AllowShortLoopsOnASingleLine: 'true'
+AllowShortLoopsOnASingleLine: 'false'
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: 'false'
 BinPackArguments: 'false'
 BinPackParameters: 'false'
 BreakAfterJavaFieldAnnotations: 'true'
+BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeTernaryOperators: 'true'
 BreakConstructorInitializers: BeforeColon
 BreakInheritanceList: BeforeColon
 BreakStringLiterals: 'true'
-ColumnLimit: '0'
+ColumnLimit: '80'
 ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
 ContinuationIndentWidth: '4'
 Cpp11BracedListStyle: 'false'
@@ -39,6 +40,8 @@ KeepEmptyLinesAtTheStartOfBlocks: 'false'
 Language: Cpp
 MaxEmptyLinesToKeep: '1'
 NamespaceIndentation: All
+PenaltyBreakAssignment: '160'
+PenaltyBreakBeforeFirstCallParameter: '160'
 PointerAlignment: Right
 ReflowComments: 'false'
 SortIncludes: 'false'
@@ -54,7 +57,7 @@ SpaceBeforeRangeBasedForLoopColon: 'true'
 SpaceInEmptyParentheses: 'false'
 SpacesBeforeTrailingComments: '2'
 SpacesInAngles: 'false'
-SpacesInCStyleCastParentheses: 'true'
+SpacesInCStyleCastParentheses: 'false'
 SpacesInContainerLiterals: 'false'
 SpacesInParentheses: 'false'
 SpacesInSquareBrackets: 'false'
